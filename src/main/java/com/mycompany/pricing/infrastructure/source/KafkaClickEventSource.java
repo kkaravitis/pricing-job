@@ -1,7 +1,7 @@
 // src/main/java/com/mycompany/pricing/infrastructure/source/KafkaClickEventSourceAdapter.java
 package com.mycompany.pricing.infrastructure.source;
 
-import com.mycompany.pricing.domain.model.ClickEvent;
+import com.mycompany.pricing.domain.ClickEvent;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;

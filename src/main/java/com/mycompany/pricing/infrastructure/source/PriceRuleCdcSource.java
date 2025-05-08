@@ -1,9 +1,9 @@
 // src/main/java/com/mycompany/pricing/infrastructure/source/PriceRuleCdcSource.java
 package com.mycompany.pricing.infrastructure.source;
 
-import com.mycompany.pricing.domain.model.PriceRuleUpdate;
-import com.mycompany.pricing.domain.model.PriceRule;
-import com.mycompany.pricing.domain.model.Money;
+import com.mycompany.pricing.domain.PriceRuleUpdate;
+import com.mycompany.pricing.domain.PriceRule;
+import com.mycompany.pricing.domain.Money;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;

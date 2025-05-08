@@ -2,7 +2,7 @@ package com.mycompany.pricing.infrastructure.source;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mycompany.pricing.domain.model.InventoryEvent;
+import com.mycompany.pricing.domain.InventoryEvent;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
