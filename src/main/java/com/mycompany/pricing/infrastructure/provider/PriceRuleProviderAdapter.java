@@ -10,7 +10,7 @@ import org.apache.flink.api.common.state.ValueStateDescriptor;
 /**
  * Keyed state store for per‐product PriceRule.
  */
-public class FlinkPriceRuleProvider implements PriceRuleProvider, Serializable {
+public class PriceRuleProviderAdapter implements PriceRuleProvider, Serializable {
     private transient ValueState<PriceRule> state;
 
     public void initializeState(RuntimeContext ctx) {

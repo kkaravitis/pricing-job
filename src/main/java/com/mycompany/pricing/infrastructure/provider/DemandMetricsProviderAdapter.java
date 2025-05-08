@@ -11,7 +11,7 @@ import org.apache.flink.api.common.functions.RuntimeContext;
 import java.io.Serializable;
 
 /** Keyed MapState for rolling demand metrics. */
-public class FlinkDemandMetricsProvider implements DemandMetricsProvider, Serializable {
+public class DemandMetricsProviderAdapter implements DemandMetricsProvider, Serializable {
     private transient MapState<String, DemandMetrics> state;
 
     public void initializeState(RuntimeContext ctx) {

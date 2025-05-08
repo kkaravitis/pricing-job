@@ -11,14 +11,14 @@ import java.io.Serializable;
  * ModelInferencePort that wraps a deserialized TransformedModel.
  * You must call `updateModelBytes` when new bytes arrive.
  */
-public class BroadcastModelInferencePort implements ModelInferencePort, Serializable {
+public class MlModelAdapter implements ModelInferencePort, Serializable {
     private static final long serialVersionUID = 1L;
 
     private final String modelKey;
     private transient byte[] modelBytes;
     private transient TransformedModel model;
 
-    public BroadcastModelInferencePort(String modelKey) {
+    public MlModelAdapter(String modelKey) {
         this.modelKey = modelKey;
     }
 

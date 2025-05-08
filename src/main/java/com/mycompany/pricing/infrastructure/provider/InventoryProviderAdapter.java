@@ -2,7 +2,6 @@
 package com.mycompany.pricing.infrastructure.provider;
 
 import com.mycompany.pricing.domain.port.InventoryProvider;
-import java.io.IOException;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -11,7 +10,7 @@ import org.apache.flink.api.common.functions.RuntimeContext;
 import java.io.Serializable;
 
 /** Keyed ValueState for inventory levels. */
-public class FlinkInventoryProvider implements InventoryProvider, Serializable {
+public class InventoryProviderAdapter implements InventoryProvider, Serializable {
     private transient ValueState<Integer> state;
 
     public void initializeState(RuntimeContext ctx) {

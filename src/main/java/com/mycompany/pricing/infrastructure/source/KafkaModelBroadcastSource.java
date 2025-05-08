@@ -40,18 +40,11 @@ public class KafkaModelBroadcastSource {
     }
 
     /**
-     * Returns the raw DataStream of model bytes (unbroadcast).
-     */
-    public DataStream<byte[]> createRaw(StreamExecutionEnvironment env) {
-        return env
-              .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "KafkaModelSource");
-    }
-
-    /**
      * Builds and returns a BroadcastStream of model bytes under MODEL_DESCRIPTOR.
      */
     public BroadcastStream<byte[]> create(StreamExecutionEnvironment env) {
-        DataStream<byte[]> raw = createRaw(env);
-        return raw.broadcast(MODEL_DESCRIPTOR);
+        return env
+              .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "KafkaModelSource")
+              .broadcast(MODEL_DESCRIPTOR);
     }
 }

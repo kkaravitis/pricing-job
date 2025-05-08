@@ -1,25 +1,25 @@
 package com.mycompany.pricing.infrastructure.source;
 
-import com.mycompany.pricing.domain.model.InventoryEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.mycompany.pricing.domain.model.InventoryEvent;
+import com.ververica.cdc.connectors.mysql.source.MySqlSource;
+import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import com.ververica.cdc.connectors.mysql.source.MySqlSource;
-import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 
 public class InventoryCdcSource {
     private static final ObjectMapper MAPPER = new ObjectMapper();
-    private final MySqlSource<String> cdc;
+    private final MySqlSource<String> dbSource;
 
     public InventoryCdcSource(
           String host, int port,
           String database, String table,
           String user, String pass
     ) {
-        this.cdc = MySqlSource.<String>builder()
+        this.dbSource = MySqlSource.<String>builder()
               .hostname(host)
               .port(port)
               .databaseList(database)
@@ -31,19 +31,16 @@ public class InventoryCdcSource {
               .build();
     }
 
-    /** Emits raw JSON strings from Debezium. */
-    public DataStream<String> createRaw(StreamExecutionEnvironment env) {
-        return env
-              .fromSource(cdc, WatermarkStrategy.noWatermarks(), "InventoryCDC");
-    }
-
-    /** Parses the JSON into InventoryEvent. */
+    /**
+     * Parses the JSON into InventoryEvent.
+     */
     public DataStream<InventoryEvent> create(StreamExecutionEnvironment env) {
-        return createRaw(env)
+        return env
+              .fromSource(dbSource, WatermarkStrategy.noWatermarks(), "InventoryCDC")
               .map(json -> {
                   JsonNode after = MAPPER.readTree(json).get("after");
                   String pid = after.get("product_id").asText();
-                  int lvl     = after.get("level").asInt();
+                  int lvl = after.get("level").asInt();
                   return new InventoryEvent(pid, lvl);
               });
     }

@@ -13,7 +13,7 @@ import org.apache.flink.api.common.typeinfo.Types;
 /**
  * Keyed ValueState storing latest competitor price per product.
  */
-public class FlinkCompetitorPriceProvider implements CompetitorPriceProvider, Serializable {
+public class CompetitorPriceProviderAdapter implements CompetitorPriceProvider, Serializable {
 
     private transient ValueState<CompetitorPrice> state;
 

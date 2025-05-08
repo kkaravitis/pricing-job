@@ -3,11 +3,11 @@ package com.mycompany.pricing.infrastructure.process;
 import com.mycompany.pricing.domain.model.ClickEvent;
 import com.mycompany.pricing.domain.model.PricingResult;
 import com.mycompany.pricing.domain.service.PricingEngineService;
-import com.mycompany.pricing.infrastructure.provider.BroadcastModelInferencePort;
-import com.mycompany.pricing.infrastructure.provider.FlinkCompetitorPriceProvider;
-import com.mycompany.pricing.infrastructure.provider.FlinkDemandMetricsProvider;
-import com.mycompany.pricing.infrastructure.provider.FlinkInventoryProvider;
-import com.mycompany.pricing.infrastructure.provider.FlinkPriceRuleProvider;
+import com.mycompany.pricing.infrastructure.provider.MlModelAdapter;
+import com.mycompany.pricing.infrastructure.provider.CompetitorPriceProviderAdapter;
+import com.mycompany.pricing.infrastructure.provider.DemandMetricsProviderAdapter;
+import com.mycompany.pricing.infrastructure.provider.InventoryProviderAdapter;
+import com.mycompany.pricing.infrastructure.provider.PriceRuleProviderAdapter;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
@@ -29,19 +29,19 @@ public class PricingWithModelBroadcastFunction
     public static final MapStateDescriptor<String, byte[]> MODEL_DESCRIPTOR =
           new MapStateDescriptor<>("model-bytes", String.class, byte[].class);
 
-    private final FlinkPriceRuleProvider  ruleProvider;
-    private final FlinkDemandMetricsProvider demandProvider;
-    private final FlinkInventoryProvider     inventoryProvider;
-    private final FlinkCompetitorPriceProvider competitorProvider;
-    private final BroadcastModelInferencePort modelPort;
+    private final PriceRuleProviderAdapter ruleProvider;
+    private final DemandMetricsProviderAdapter demandProvider;
+    private final InventoryProviderAdapter inventoryProvider;
+    private final CompetitorPriceProviderAdapter competitorProvider;
+    private final MlModelAdapter modelPort;
     private transient PricingEngineService pricingService;
 
     public PricingWithModelBroadcastFunction(
-          FlinkPriceRuleProvider ruleProvider,
-          FlinkDemandMetricsProvider demandProvider,
-          FlinkInventoryProvider inventoryProvider,
-          FlinkCompetitorPriceProvider competitorProvider,
-          BroadcastModelInferencePort modelPort
+          PriceRuleProviderAdapter ruleProvider,
+          DemandMetricsProviderAdapter demandProvider,
+          InventoryProviderAdapter inventoryProvider,
+          CompetitorPriceProviderAdapter competitorProvider,
+          MlModelAdapter modelPort
     ) {
         this.ruleProvider       = ruleProvider;
         this.demandProvider     = demandProvider;

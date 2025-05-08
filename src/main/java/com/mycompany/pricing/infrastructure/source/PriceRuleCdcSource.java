@@ -10,8 +10,6 @@ import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.streaming.api.datastream.BroadcastStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -42,7 +40,7 @@ public class PriceRuleCdcSource {
     /**
      * Returns the raw stream of PriceRuleUpdate events (unbroadcast).
      */
-    public DataStream<PriceRuleUpdate> createRaw(StreamExecutionEnvironment env) {
+    public DataStream<PriceRuleUpdate> create(StreamExecutionEnvironment env) {
         return env
               .fromSource(cdcSource, WatermarkStrategy.noWatermarks(), "PriceRuleCDC")
               .map(json -> {
