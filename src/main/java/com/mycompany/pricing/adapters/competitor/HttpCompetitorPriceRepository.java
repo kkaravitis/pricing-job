@@ -28,7 +28,7 @@ public class HttpCompetitorPriceRepository implements CompetitorPriceRepository 
             double price = node.get("price").asDouble();
             return new CompetitorPrice(productId, new Money(price, "USD"));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch competitor price for " + productId, e);
+            throw new RuntimeException("Failed to fetch competitor price for " + productId, e);//TODO: Replace with application dedicated exception
         }
     }
 }

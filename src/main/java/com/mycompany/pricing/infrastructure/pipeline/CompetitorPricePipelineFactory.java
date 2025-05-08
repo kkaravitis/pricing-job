@@ -18,7 +18,7 @@ public class CompetitorPricePipelineFactory {
     public void build (DataStream<ClickEvent> clicks) {
         // Async competitor price lookup
         HttpCompetitorPriceRepository httpProv =
-              new HttpCompetitorPriceRepository(new OkHttpServiceClient(), "http://api.example.com");
+              new HttpCompetitorPriceRepository(new OkHttpServiceClient(), "http://api.example.com");//TODO: Pass from configuration file
         FlinkAsyncCompetitorEnrichment asyncEnrich = new FlinkAsyncCompetitorEnrichment(httpProv);
         SingleOutputStreamOperator<String> prodIds = clicks
               .map(ClickEvent::getProductId).name("ExtractProductId");

@@ -8,5 +8,5 @@ import java.io.Serializable;
  * Implementations may aggregate real-time and historical data streams.
  */
 public interface DemandMetricsRepository extends Serializable {
-    DemandMetrics getDemandMetrics(String productId) throws Exception;
+    DemandMetrics getDemandMetrics(String productId) throws Exception;//TODO: Replace with application dedicated exception
 }

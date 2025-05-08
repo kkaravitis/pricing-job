@@ -11,7 +11,7 @@ import org.apache.flink.api.java.typeutils.TypeExtractor;
 public class RawByteDeserializationSchema implements DeserializationSchema<byte[]> {
 
     @Override
-    public byte[] deserialize(byte[] message) throws IOException {
+    public byte[] deserialize(byte[] message)  {
         // message is already the raw bytes
         return message;
     }

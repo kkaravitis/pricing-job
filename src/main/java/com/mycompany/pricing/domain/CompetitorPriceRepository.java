@@ -8,5 +8,5 @@ import java.io.Serializable;
  * Implementations may perform async HTTP calls or read from Kafka sources.
  */
 public interface CompetitorPriceRepository extends Serializable {
-    CompetitorPrice getCompetitorPrice(String productId) throws Exception;
+    CompetitorPrice getCompetitorPrice(String productId) throws Exception; //TODO: Replace with application dedicated exception
 }

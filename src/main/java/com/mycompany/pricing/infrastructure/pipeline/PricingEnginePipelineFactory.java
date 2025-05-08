@@ -13,7 +13,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 public class PricingEnginePipelineFactory {
         public void build(DataStream<ClickEvent> clicks, StreamExecutionEnvironment env) {
             KafkaModelBroadcastSource modelCdc =
-                  new KafkaModelBroadcastSource("localhost:9092", "model-topic", "model-group");
+                  new KafkaModelBroadcastSource("localhost:9092", "model-topic", "model-group");//TODO: Pass from configuration file
             clicks
                   .keyBy(ClickEvent::getProductId)
                   .connect(modelCdc.create(env))

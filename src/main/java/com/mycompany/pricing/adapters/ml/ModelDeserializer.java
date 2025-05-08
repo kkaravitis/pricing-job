@@ -1,19 +1,17 @@
 package com.mycompany.pricing.adapters.ml;
 
-import com.mycompany.pricing.domain.PricingContext;
 import com.mycompany.pricing.domain.Money;
-import java.nio.FloatBuffer;
-import org.tensorflow.SavedModelBundle;
-import org.tensorflow.Session;
-import org.tensorflow.Tensor;
-
 import java.io.IOException;
+import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
-import java.util.zip.ZipInputStream;
 import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+import org.tensorflow.SavedModelBundle;
+import org.tensorflow.Session;
+import org.tensorflow.Tensor;
 
 /**
  * Utility to convert raw model bytes into a TransformedModel instance.
@@ -49,24 +47,21 @@ public class ModelDeserializer {
             Session session = bundle.session();
 
             // 3) Return a TransformedModel wrapping the TF session
-            return new TransformedModel() {
-                @Override
-                public Money predict(PricingContext ctx) {
-                    // Build input tensor from your context features
-                    float[] features = new float[] {
-                          (float) ctx.getInventoryLevel(),
-                          (float) ctx.getDemandMetrics().getCurrentDemand(),
-                          (float) ctx.getCompetitorPrice().getPrice().getAmount().doubleValue()
-                    };
-                    try (Tensor<Float> input = Tensor.create(new long[]{1, features.length}, FloatBuffer.wrap(features));
-                          Tensor<Float> output = session.runner()
-                                .feed("serving_default_input", input)
-                                .fetch("StatefulPartitionedCall")
-                                .run().get(0).expect(Float.class)) {
-                        float[][] outVal = new float[1][1];
-                        output.copyTo(outVal);
-                        return new Money(outVal[0][0], ctx.getPriceRule().getMinPrice().getCurrency());
-                    }
+            return ctx -> {
+                // Build input tensor from your context features
+                float[] features = new float[] {
+                      (float) ctx.getInventoryLevel(),
+                      (float) ctx.getDemandMetrics().getCurrentDemand(),
+                      (float) ctx.getCompetitorPrice().getPrice().getAmount().doubleValue()
+                };
+                try (Tensor<Float> input = Tensor.create(new long[]{1, features.length}, FloatBuffer.wrap(features));
+                      Tensor<Float> output = session.runner()
+                            .feed("serving_default_input", input)
+                            .fetch("StatefulPartitionedCall")
+                            .run().get(0).expect(Float.class)) {
+                    float[][] outVal = new float[1][1];
+                    output.copyTo(outVal);
+                    return new Money(outVal[0][0], ctx.getPriceRule().getMinPrice().getCurrency());
                 }
             };
         } catch (IOException e) {

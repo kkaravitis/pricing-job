@@ -34,7 +34,7 @@ public class FlinkCompetitorPriceRepository implements CompetitorPriceRepository
     }
 
     @Override
-    public CompetitorPrice getCompetitorPrice(String productId) throws Exception {
+    public CompetitorPrice getCompetitorPrice(String productId) throws Exception {//TODO: Replace with application dedicated exception
         CompetitorPrice cp = state.value();
         return cp != null ? cp : new CompetitorPrice(productId, new Money(0.0, "USD"));
     }

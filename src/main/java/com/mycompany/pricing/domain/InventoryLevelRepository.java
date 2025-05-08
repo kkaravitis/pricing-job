@@ -7,5 +7,5 @@ import java.io.Serializable;
  * Implementations could use Flink state, database lookup, or external API.
  */
 public interface InventoryLevelRepository extends Serializable {
-    int getInventoryLevel(String productId) throws Exception;
+    int getInventoryLevel(String productId) throws Exception;//TODO: Replace with application dedicated exception
 }

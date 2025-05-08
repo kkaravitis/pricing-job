@@ -33,7 +33,7 @@ public class OkHttpServiceClient implements HttpServiceClient {
             if (!response.isSuccessful()) {
                 throw new IOException("HTTP " + response.code() + " for " + url);
             }
-            return response.body().string();
+            return response.body() != null ? response.body().string() : null;
         }
     }
 }

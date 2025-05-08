@@ -10,5 +10,5 @@ public interface HttpServiceClient {
      * @return response body string
      * @throws Exception on network or IO errors
      */
-    String get(String url) throws Exception;
+    String get(String url) throws Exception;//TODO: Replace with application dedicated exception
 }

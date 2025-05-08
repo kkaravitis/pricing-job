@@ -13,7 +13,7 @@ public class PriceRulePipelineFactory {
 
     public void build(StreamExecutionEnvironment env) {
         PriceRuleCdcSource ruleCdc = new PriceRuleCdcSource(
-              "db-host", 3306, "pricing_db", "price_rules", "dbuser", "dbpass");
+              "db-host", 3306, "pricing_db", "price_rules", "dbuser", "dbpass");//TODO: Pass from configuration file
         DataStream<PriceRuleUpdate> ruleUpdates = ruleCdc.create(env);
 
         FlinkPriceRuleRepository ruleProv = new FlinkPriceRuleRepository();

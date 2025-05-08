@@ -1,10 +1,9 @@
 // src/main/java/com/mycompany/pricing/infrastructure/provider/BroadcastModelInferencePort.java
 package com.mycompany.pricing.adapters.ml;
 
-import com.mycompany.pricing.domain.PricingContext;
-import com.mycompany.pricing.domain.Money;
 import com.mycompany.pricing.domain.ModelInferencePricePredictor;
-
+import com.mycompany.pricing.domain.Money;
+import com.mycompany.pricing.domain.PricingContext;
 import java.io.Serializable;
 
 /**
