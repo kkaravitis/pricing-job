@@ -26,38 +26,49 @@ public class PricingEngineService {
      * Calculates the final price for a given product ID.
      * @return a PricingResult containing the new price in Money
      */
-    public PricingResult computePrice(PricingContext ctx, Money mlBasePrice) {
-        // 1) Start from ML base price
-        Money price = mlBasePrice;
+    public PricingResult computePrice(String productId) throws Exception {
+        // 1) Gather data from ports
+        Product product    = new Product(productId);
+        DemandMetrics dm   = demandMetricsProvider.getDemandMetrics(productId);
+        int inventoryLevel = inventoryProvider.getInventoryLevel(productId);
+        CompetitorPrice cp = competitorPriceProvider.getCompetitorPrice(productId);
+        PriceRule rule     = ruleProvider.getPriceRule(productId);
 
-        // 2) Blend in competitor price (e.g. weighted average)
-        Money comp = ctx.getCompetitorPrice().getPrice();  // assume Money
-        price = price.multiply(0.7)
-              .add(comp.multiply(0.3));
+        // fallback if no rule yet
+        if (rule == null) {
+            rule = PriceRule.defaults();
+        }
 
-        // Adjust for demand: if currentDemand > historicalAverage, increase price by 5%
-        DemandMetrics dm = ctx.getDemandMetrics();
+        // 2) Build a context for ML inference
+        PricingContext ctx = new PricingContext(
+              product, dm, inventoryLevel, cp, rule
+        );
+
+        // 3) ML base price
+        Money mlPrice = modelInferencePort.predictPrice(ctx);
+
+        // 4) Blend competitor (70/30)
+        Money price = mlPrice.multiply(0.7)
+              .add(cp.getPrice().multiply(0.3));
+
+        // 5) Demand adjustment
         if (dm.getCurrentDemand() > dm.getHistoricalAverage()) {
             price = price.multiply(1.05);
         }
 
-        // 3) Adjust for low inventory (e.g. +10% if < threshold)
-        if (ctx.getInventoryLevel() < 10) {
+        // 6) Inventory adjustment
+        if (inventoryLevel < 10) {
             price = price.multiply(1.1);
         }
 
-        // 4) Clamp within the PriceRule
-        PriceRule rule = ctx.getPriceRule();
+        // 7) Clamp within rules
         if (price.isLessThan(rule.getMinPrice())) {
             price = rule.getMinPrice();
         } else if (price.isGreaterThan(rule.getMaxPrice())) {
             price = rule.getMaxPrice();
         }
 
-        // 5) Build result
-        return new PricingResult(
-              ctx.getProduct(),
-              price
-        );
+        // 8) Return result
+        return new PricingResult(product, price);
     }
 }

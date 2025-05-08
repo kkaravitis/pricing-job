@@ -11,6 +11,7 @@ import com.mycompany.pricing.domain.model.PriceRule;
 import com.mycompany.pricing.domain.model.PriceRuleUpdate;
 import com.mycompany.pricing.infrastructure.async.FlinkAsyncCompetitorEnrichment;
 import com.mycompany.pricing.infrastructure.process.PricingWithModelBroadcastFunction;
+import com.mycompany.pricing.infrastructure.provider.BroadcastModelInferencePort;
 import com.mycompany.pricing.infrastructure.provider.FlinkCompetitorPriceProvider;
 import com.mycompany.pricing.infrastructure.provider.FlinkDemandMetricsProvider;
 import com.mycompany.pricing.infrastructure.provider.FlinkInventoryProvider;
@@ -60,13 +61,11 @@ public class FlinkDynamicPricingJob {
         // collect product price rule.
         FlinkPriceRuleProvider ruleProvider = feedFlinkPriceRuleProvider(env);
 
-        PriceRule defaultRule = new PriceRule(
-              new Money(BigDecimal.ZERO, "USD"),
-              new Money(Double.MAX_VALUE, "USD")
-        );
-
         KafkaModelBroadcastSource modelCdc =
               new KafkaModelBroadcastSource("localhost:9092", "model-topic", "model-group");
+
+        BroadcastModelInferencePort modelPort =
+              new BroadcastModelInferencePort("current-model");
 
         // 7) Unified broadcast-process for pricing
         clicks
@@ -77,7 +76,7 @@ public class FlinkDynamicPricingJob {
                     demandMetricsProvider,
                     inventoryProvider,
                     priceProvider,
-                    defaultRule
+                    modelPort
               ))
               .name("DynamicPricingUnified")
               .print();
