@@ -10,7 +10,9 @@ import com.wordpress.kkaravitis.pricing.adapters.FlinkInventoryLevelRepository;
 import com.wordpress.kkaravitis.pricing.adapters.FlinkPriceRuleRepository;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
+import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction.OnTimerContext;
 import org.apache.flink.util.Collector;
 
 /**
@@ -24,6 +26,8 @@ public class PricingWithModelBroadcastFunction
       byte[],           // broadcast stream element: model bytes
       PricingResult>    // output
 {
+
+    private static final long ONE_MINUTE = 60_000L;
 
     /** Descriptor for the broadcast‐state of the ML model bytes */
     public static final MapStateDescriptor<String, byte[]> MODEL_DESCRIPTOR =
@@ -85,9 +89,28 @@ public class PricingWithModelBroadcastFunction
           Collector<PricingResult> out
     ) throws Exception {
         String productId = click.getProductId();
-
         PricingResult result = pricingEngineService.computePrice(productId);
-
         out.collect(result);
+
+        TimerService timerService = ctx.timerService();
+        long nextTimer = timerService.currentProcessingTime() + ONE_MINUTE;
+        timerService.registerProcessingTimeTimer(nextTimer);
+    }
+
+    @Override
+    public void onTimer(long timestamp,
+          KeyedBroadcastProcessFunction<String, ClickEvent,
+                byte[], PricingResult>.OnTimerContext ctx,
+          Collector<PricingResult> out) throws Exception {
+
+        String productId = ctx.getCurrentKey();
+
+        // 1) recompute & emit price on timer
+        PricingResult result = pricingEngineService.computePrice(productId);
+        out.collect(result);
+
+        // 2) schedule the next timer
+        long nextTimer = timestamp + ONE_MINUTE;
+        ctx.timerService().registerProcessingTimeTimer(nextTimer);
     }
 }
