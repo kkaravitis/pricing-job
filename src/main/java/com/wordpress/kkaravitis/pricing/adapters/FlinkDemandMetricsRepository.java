@@ -1,4 +1,3 @@
-// src/main/java/com/mycompany/pricing/infrastructure/provider/FlinkDemandMetricsProvider.java
 package com.wordpress.kkaravitis.pricing.adapters;
 
 import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;

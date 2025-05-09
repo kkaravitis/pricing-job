@@ -1,6 +1,5 @@
 package com.wordpress.kkaravitis.pricing.infrastructure.source;
 
-import java.io.IOException;
 import org.apache.flink.api.common.serialization.DeserializationSchema;
 import org.apache.flink.api.common.typeinfo.TypeInformation;
 import org.apache.flink.api.java.typeutils.TypeExtractor;

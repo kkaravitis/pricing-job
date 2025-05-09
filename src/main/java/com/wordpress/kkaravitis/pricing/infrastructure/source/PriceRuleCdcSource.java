@@ -1,4 +1,3 @@
-// src/main/java/com/mycompany/pricing/infrastructure/source/PriceRuleCdcSource.java
 package com.wordpress.kkaravitis.pricing.infrastructure.source;
 
 import com.wordpress.kkaravitis.pricing.domain.PriceRuleUpdate;

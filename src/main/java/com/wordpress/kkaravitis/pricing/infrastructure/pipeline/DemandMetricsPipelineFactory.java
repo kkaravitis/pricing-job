@@ -89,19 +89,19 @@ public class DemandMetricsPipelineFactory {
                   }
               });
 
-        FlinkDemandMetricsRepository demandMetricsProviderAdapter = new FlinkDemandMetricsRepository();
+        FlinkDemandMetricsRepository demandMetricsRepository = new FlinkDemandMetricsRepository();
         demandMetricsStream
               .keyBy(DemandMetrics::getProductId)
               .process(new KeyedProcessFunction<String, DemandMetrics, Void>() {
                   @Override
                   public void open(Configuration cfg) {
-                      demandMetricsProviderAdapter.initializeState(getRuntimeContext());
+                      demandMetricsRepository.initializeState(getRuntimeContext());
                   }
 
                   @Override
                   public void processElement(DemandMetrics dm, Context ctx, Collector<Void> out)
                         throws Exception {
-                      demandMetricsProviderAdapter.updateMetrics(dm.getProductId(), dm);
+                      demandMetricsRepository.updateMetrics(dm.getProductId(), dm);
                   }
               })
               .name("UpdateDemandMetricsState");

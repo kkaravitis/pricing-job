@@ -1,4 +1,3 @@
-// src/main/java/com/mycompany/pricing/infrastructure/provider/FlinkCompetitorPriceProvider.java
 package com.wordpress.kkaravitis.pricing.adapters.competitor;
 
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;

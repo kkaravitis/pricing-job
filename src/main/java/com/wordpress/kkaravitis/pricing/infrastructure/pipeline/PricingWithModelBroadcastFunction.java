@@ -29,45 +29,41 @@ public class PricingWithModelBroadcastFunction
     public static final MapStateDescriptor<String, byte[]> MODEL_DESCRIPTOR =
           new MapStateDescriptor<>("model-bytes", String.class, byte[].class);
 
-    private final FlinkPriceRuleRepository ruleProvider;
-    private final FlinkDemandMetricsRepository demandProvider;
-    private final FlinkInventoryLevelRepository inventoryProvider;
-    private final FlinkCompetitorPriceRepository competitorProvider;
-    private final MlModelAdapter modelPort;
-    private transient PricingEngineService pricingService;
+    private final FlinkPriceRuleRepository priceRuleRepository;
+    private final FlinkDemandMetricsRepository demandMetricsRepository;
+    private final FlinkInventoryLevelRepository inventoryLevelRepository;
+    private final FlinkCompetitorPriceRepository flinkCompetitorPriceRepository;
+    private final MlModelAdapter mlModelAdapter;
+    private transient PricingEngineService pricingEngineService;
 
     public PricingWithModelBroadcastFunction(
-          FlinkPriceRuleRepository ruleProvider,
-          FlinkDemandMetricsRepository demandProvider,
-          FlinkInventoryLevelRepository inventoryProvider,
-          FlinkCompetitorPriceRepository competitorProvider,
-          MlModelAdapter modelPort
+          FlinkPriceRuleRepository priceRuleRepository,
+          FlinkDemandMetricsRepository demandMetricsRepository,
+          FlinkInventoryLevelRepository inventoryLevelRepository,
+          FlinkCompetitorPriceRepository flinkCompetitorPriceRepository,
+          MlModelAdapter mlModelAdapter
     ) {
-        this.ruleProvider       = ruleProvider;
-        this.demandProvider     = demandProvider;
-        this.inventoryProvider  = inventoryProvider;
-        this.competitorProvider = competitorProvider;
-        this.modelPort          = modelPort;
+        this.priceRuleRepository = priceRuleRepository;
+        this.demandMetricsRepository = demandMetricsRepository;
+        this.inventoryLevelRepository = inventoryLevelRepository;
+        this.flinkCompetitorPriceRepository = flinkCompetitorPriceRepository;
+        this.mlModelAdapter = mlModelAdapter;
 
     }
 
     @Override
     public void open(Configuration parameters) {
+        priceRuleRepository.initializeState(getRuntimeContext());
+        demandMetricsRepository.initializeState(getRuntimeContext());
+        inventoryLevelRepository.initializeState(getRuntimeContext());
+        flinkCompetitorPriceRepository.initializeState(getRuntimeContext());
 
-        // initialize providers
-        ruleProvider.initializeState(getRuntimeContext());
-        demandProvider.initializeState(getRuntimeContext());
-        inventoryProvider.initializeState(getRuntimeContext());
-        competitorProvider.initializeState(getRuntimeContext());
-
-
-        // prepare pricing service with placeholders; real rule+model applied per event
-        pricingService = new PricingEngineService(
-              demandProvider,
-              inventoryProvider,
-              competitorProvider,
-              ruleProvider,
-              modelPort
+        pricingEngineService = new PricingEngineService(
+              demandMetricsRepository,
+              inventoryLevelRepository,
+              flinkCompetitorPriceRepository,
+              priceRuleRepository,
+              mlModelAdapter
         );
     }
 
@@ -78,7 +74,7 @@ public class PricingWithModelBroadcastFunction
           Context ctx,
           Collector<PricingResult> out
     ) throws Exception {
-        modelPort.updateModelBytes(modelBytes);
+        mlModelAdapter.updateModelBytes(modelBytes);
     }
 
     // process each click event
@@ -90,7 +86,7 @@ public class PricingWithModelBroadcastFunction
     ) throws Exception {
         String productId = click.getProductId();
 
-        PricingResult result = pricingService.computePrice(productId);
+        PricingResult result = pricingEngineService.computePrice(productId);
 
         out.collect(result);
     }

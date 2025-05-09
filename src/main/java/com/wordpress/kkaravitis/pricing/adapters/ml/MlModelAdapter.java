@@ -1,4 +1,3 @@
-// src/main/java/com/mycompany/pricing/infrastructure/provider/BroadcastModelInferencePort.java
 package com.wordpress.kkaravitis.pricing.adapters.ml;
 
 import com.wordpress.kkaravitis.pricing.domain.ModelInferencePricePredictor;
