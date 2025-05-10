@@ -6,15 +6,24 @@ import com.wordpress.kkaravitis.pricing.adapters.FlinkPriceRuleRepository;
 import com.wordpress.kkaravitis.pricing.adapters.competitor.FlinkCompetitorPriceRepository;
 import com.wordpress.kkaravitis.pricing.adapters.ml.MlModelAdapter;
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
+import com.wordpress.kkaravitis.pricing.domain.PricingResult;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcastSource;
+import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.connector.base.DeliveryGuarantee;
+import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
+import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.kafka.clients.producer.ProducerConfig;
 
 public class PricingEnginePipelineFactory {
         public void build(DataStream<ClickEvent> clicks, StreamExecutionEnvironment env) {
+
             KafkaModelBroadcastSource modelCdc =
                   new KafkaModelBroadcastSource("localhost:9092", "model-topic", "model-group");//TODO: Pass from configuration file
-            clicks
+
+            SingleOutputStreamOperator<PricingResult> priced = clicks
                   .keyBy(ClickEvent::getProductId)
                   .connect(modelCdc.create(env))
                   .process(new PricingWithModelBroadcastFunction(
@@ -24,8 +33,51 @@ public class PricingEnginePipelineFactory {
                         new FlinkCompetitorPriceRepository(),
                         new MlModelAdapter("current-model")
                   ))
-                  .name("DynamicPricingUnified")
-                  .print();
+                  .name("DynamicPricingUnified");
 
+
+            DataStream<PricingResult> alerts = priced
+                  .getSideOutput(PricingWithModelBroadcastFunction.ALERT_TAG);
+
+
+            priced.sinkTo(KafkaSink
+                  .<PricingResult>builder()
+                  .setBootstrapServers("localhost:9092")
+                  .setRecordSerializer(
+                        KafkaRecordSerializationSchema.<PricingResult>builder()
+                              .setTopic("pricing-results")
+                              .setKeySerializationSchema(
+                                    result ->  result.getProduct().getProductId().getBytes()
+                              )
+                              .setValueSerializationSchema(
+                                    new JsonPojoSchema<>(PricingResult.class)
+                              )
+                              .build()
+                  )
+                  .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+                  .setTransactionalIdPrefix("pricing-txn-")
+                  .setProperty(ProducerConfig.ACKS_CONFIG, "all")
+                  .setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true")
+                  .build())
+                  .name("PricingKafkaSink");
+
+            // alert sink: you could log, side-output to another Kafka topic, etc.
+            alerts
+                  .map(alert -> "ALERT: price jump for " + alert.getProduct().getProductId() +
+                        " new=" + alert.getNewPrice())
+                  .sinkTo(KafkaSink
+                        .<String>builder()
+                        .setBootstrapServers("localhost:9092")
+                        .setRecordSerializer(
+                              KafkaRecordSerializationSchema.builder()
+                                    .setTopic("pricing-alerts")
+                                    .setKeySerializationSchema(new SimpleStringSchema())
+                                    .setValueSerializationSchema(new SimpleStringSchema())
+                                    .build()
+                        )
+                        .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
+                        .setTransactionalIdPrefix("pricing-alerts-txn-")
+                        .build())
+                  .name("PricingAlertSink");
         }
 }

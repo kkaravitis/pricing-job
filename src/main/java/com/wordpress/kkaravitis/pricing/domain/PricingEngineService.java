@@ -18,6 +18,7 @@ public class PricingEngineService {
     private final CompetitorPriceRepository competitorPriceRepository;
     private final PriceRuleRepository priceRuleRepository;
     private final ModelInferencePricePredictor modelInferencePricePredictor;
+    private final EmergencyPriceAdjustmentRepository emergencyPriceAdjustmentRepository;
 
     /**
      * Calculates the final price for a given product ID.
@@ -58,14 +59,20 @@ public class PricingEngineService {
             price = price.multiply(1.1);
         }
 
-        // 7) Clamp within rules
+        // 7) Emergency spike adjustment (e.g. flash-sale factor)
+        double emergFactor = emergencyPriceAdjustmentRepository.getAdjustmentFactor(productId);
+        if (emergFactor > 1.0) {
+            price = price.multiply(emergFactor);
+        }
+
+        // 8) Clamp within rules
         if (price.isLessThan(rule.getMinPrice())) {
             price = rule.getMinPrice();
         } else if (price.isGreaterThan(rule.getMaxPrice())) {
             price = rule.getMaxPrice();
         }
 
-        // 8) Return result
+        // 9) Return result
         return new PricingResult(product, price);
     }
 }

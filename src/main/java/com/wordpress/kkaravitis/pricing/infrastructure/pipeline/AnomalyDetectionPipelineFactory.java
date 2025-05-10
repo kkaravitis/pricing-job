@@ -1,0 +1,80 @@
+package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
+
+import com.wordpress.kkaravitis.pricing.adapters.FlinkEmergencyAdjustmentRepository;
+import com.wordpress.kkaravitis.pricing.domain.EmergencyPriceAdjustment;
+import com.wordpress.kkaravitis.pricing.domain.OrderEvent;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.OrderCdcSource;
+import org.apache.flink.cep.CEP;
+import org.apache.flink.cep.PatternSelectFunction;
+import org.apache.flink.cep.pattern.Pattern;
+import org.apache.flink.cep.pattern.conditions.SimpleCondition;
+import org.apache.flink.configuration.Configuration;
+import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
+import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
+import org.apache.flink.streaming.api.windowing.time.Time;
+
+import java.util.List;
+import org.apache.flink.util.Collector;
+
+/**
+ * Detects flash‐sale spikes (≥10 orders in 1 min) and emits EmergencyPriceAdjustment.
+ */
+public class AnomalyDetectionPipelineFactory {
+
+    public void build(StreamExecutionEnvironment env) {
+        // 1) Ingest order events via CDC
+        OrderCdcSource ordersCdc = new OrderCdcSource(
+              "db-host", 3306,
+              "shop_db", "orders",
+              "dbuser", "dbpass"
+        );
+        DataStream<OrderEvent> orders = ordersCdc.create(env);
+
+        // 2) Define a CEP pattern: ten or more events in 1 minute
+        Pattern<OrderEvent, ?> flashSalePattern = Pattern.<OrderEvent>begin("start")
+              .where(new SimpleCondition<OrderEvent>() {
+                  @Override
+                  public boolean filter(OrderEvent value) {
+                      return true;
+                  }
+              })
+              .times(10)                            // require at least 10 matches
+              .consecutive()                       // back‐to‐back
+              .within(Time.minutes(1));            // within one minute
+
+        // 3) Apply pattern keyed by productId
+        SingleOutputStreamOperator<EmergencyPriceAdjustment> adjustments =
+              CEP.pattern(
+                          orders.keyBy(OrderEvent::getProductId),
+                          flashSalePattern
+                    )
+                    .select((PatternSelectFunction<OrderEvent, EmergencyPriceAdjustment>) pattern -> {
+                        List<OrderEvent> events = pattern.get("start");
+                        String pid = events.get(0).getProductId();
+                        // e.g. increase price by 20% during flash sale
+                        return new EmergencyPriceAdjustment(pid, 1.2);
+                    });
+
+        FlinkEmergencyAdjustmentRepository emergencyAdjustmentRepository = new FlinkEmergencyAdjustmentRepository();
+        adjustments
+              .keyBy(EmergencyPriceAdjustment::getProductId)
+              .process(new KeyedProcessFunction<String, EmergencyPriceAdjustment, Void>() {
+                  @Override
+                  public void open(Configuration cfg) {
+                      emergencyAdjustmentRepository.initializeState(getRuntimeContext());
+                  }
+                  @Override
+                  public void processElement(
+                        EmergencyPriceAdjustment adjustment,
+                        Context ctx,
+                        Collector<Void> out
+                  ) throws Exception {
+                      emergencyAdjustmentRepository.updateAdjustment(adjustment.getProductId(),
+                            adjustment.getAdjustmentFactor());
+                  }
+              })
+              .name("UpdateEmergencyAdjustmentState");
+    }
+}
