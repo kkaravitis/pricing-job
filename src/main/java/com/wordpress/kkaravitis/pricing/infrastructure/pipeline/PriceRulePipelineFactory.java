@@ -2,7 +2,9 @@ package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 
 import com.wordpress.kkaravitis.pricing.adapters.FlinkPriceRuleRepository;
 import com.wordpress.kkaravitis.pricing.domain.PriceRuleUpdate;
+import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.PriceRuleCdcSource;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.PriceRuleCdcSource.PriceRuleCdcSourceContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -11,9 +13,17 @@ import org.apache.flink.util.Collector;
 
 public class PriceRulePipelineFactory {
 
-    public void build(StreamExecutionEnvironment env) {
+    public void build(StreamExecutionEnvironment env, Configuration config) {
         PriceRuleCdcSource ruleCdc = new PriceRuleCdcSource(
-              "db-host", 3306, "pricing_db", "price_rules", "dbuser", "dbpass");//TODO: Pass from configuration file
+              PriceRuleCdcSourceContext
+                    .builder()
+                    .hostname(config.get(PricingConfigOptions.PRICERULE_CDC_HOST))
+                    .database(config.get(PricingConfigOptions.PRICERULE_CDC_DATABASE))
+                    .port(config.get(PricingConfigOptions.PRICERULE_CDC_PORT))
+                    .table(config.get(PricingConfigOptions.PRICERULE_CDC_TABLE))
+                    .username(config.get(PricingConfigOptions.PRICERULE_CDC_USER))
+                    .password(config.get(PricingConfigOptions.PRICERULE_CDC_PASSWORD))
+                    .build());
         DataStream<PriceRuleUpdate> ruleUpdates = ruleCdc.create(env);
 
         FlinkPriceRuleRepository ruleProv = new FlinkPriceRuleRepository();

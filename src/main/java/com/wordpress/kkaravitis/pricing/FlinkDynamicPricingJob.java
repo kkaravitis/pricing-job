@@ -1,6 +1,8 @@
 package com.wordpress.kkaravitis.pricing;
 
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
+import com.wordpress.kkaravitis.pricing.infrastructure.config.ConfigurationFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.AnomalyDetectionPipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.CompetitorPricePipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.DemandMetricsPipelineFactory;
@@ -8,6 +10,9 @@ import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.InventoryPipelin
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PriceRulePipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PricingEnginePipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaClickEventSource;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaClickEventSource.KafkaClickEventSourceContext;
+import org.apache.flink.api.java.utils.ParameterTool;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
@@ -21,28 +26,25 @@ public class FlinkDynamicPricingJob {
 
         env.setParallelism(4);
 
+        ParameterTool params = ParameterTool.fromArgs(args);
+        Configuration config = new ConfigurationFactory().build(params);
+
         // Click events
         KafkaClickEventSource clicksSource =
-              new KafkaClickEventSource("localhost:9092", "click-topic", "click-group");
+              new KafkaClickEventSource(KafkaClickEventSourceContext.builder()
+                    .brokers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))
+                    .topic(config.get(PricingConfigOptions.KAFKA_CLICK_TOPIC))
+                    .groupId(config.get(PricingConfigOptions.KAFKA_CLICK_GROUP_ID))
+                    .build());
+
         DataStream<ClickEvent> clicks = clicksSource.create(env);
 
-        CompetitorPricePipelineFactory competitorPricePipelineFactory = new CompetitorPricePipelineFactory();
-        competitorPricePipelineFactory.build(clicks);
-
-        DemandMetricsPipelineFactory demandMetricsPipelineFactory = new DemandMetricsPipelineFactory();
-        demandMetricsPipelineFactory.build(clicks);
-
-        InventoryPipelineFactory inventoryPipelineFactory = new InventoryPipelineFactory();
-        inventoryPipelineFactory.build(env);
-
-        PriceRulePipelineFactory priceRulePipelineFactory = new PriceRulePipelineFactory();
-        priceRulePipelineFactory.build(env);
-
-        AnomalyDetectionPipelineFactory anomalyDetectionPipelineFactory = new AnomalyDetectionPipelineFactory();
-        anomalyDetectionPipelineFactory.build(env);
-
-        PricingEnginePipelineFactory pricingEnginePipelineFactory = new PricingEnginePipelineFactory();
-        pricingEnginePipelineFactory.build(clicks, env);
+        new CompetitorPricePipelineFactory().build(clicks, config);
+        new DemandMetricsPipelineFactory().build(clicks);
+        new InventoryPipelineFactory().build(env, config);
+        new PriceRulePipelineFactory().build(env, config);
+        new AnomalyDetectionPipelineFactory().build(env, config);
+        new PricingEnginePipelineFactory().build(clicks, env, config);
 
         env.execute("Flink Dynamic Pricing Job");
     }

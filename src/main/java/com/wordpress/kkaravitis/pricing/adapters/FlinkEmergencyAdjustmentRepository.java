@@ -3,12 +3,11 @@ package com.wordpress.kkaravitis.pricing.adapters;
 import com.wordpress.kkaravitis.pricing.domain.EmergencyPriceAdjustmentRepository;
 import com.wordpress.kkaravitis.pricing.domain.PricingException;
 import java.io.IOException;
+import java.io.Serializable;
+import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.StateTtlConfig;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.common.functions.RuntimeContext;
-
-import java.io.Serializable;
 import org.apache.flink.api.common.time.Time;
 
 /**
@@ -43,7 +42,7 @@ public class FlinkEmergencyAdjustmentRepository
     /**
      * Called by the CEP‐pipeline to update the factor (e.g. 1.2).
      */
-    public void updateAdjustment(String productId, double factor) throws PricingException {
+    public void updateAdjustment(double factor) throws PricingException {
         try {
             state.update(factor);
         } catch (IOException e) {

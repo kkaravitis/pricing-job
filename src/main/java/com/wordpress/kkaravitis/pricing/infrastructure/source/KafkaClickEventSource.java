@@ -1,6 +1,8 @@
 package com.wordpress.kkaravitis.pricing.infrastructure.source;
 
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
+import lombok.Builder;
+import lombok.Getter;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -16,11 +18,11 @@ public class KafkaClickEventSource {
     private final KafkaSource<String> kafkaSource;
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public KafkaClickEventSource(String brokers, String topic, String groupId) {
+    public KafkaClickEventSource(KafkaClickEventSourceContext context) {
         this.kafkaSource = KafkaSource.<String>builder()
-              .setBootstrapServers(brokers)
-              .setTopics(topic)
-              .setGroupId(groupId)
+              .setBootstrapServers(context.brokers)
+              .setTopics(context.topic)
+              .setGroupId(context.groupId)
               .setStartingOffsets(OffsetsInitializer.latest())
               .setValueOnlyDeserializer(new SimpleStringSchema())
               .build();
@@ -37,5 +39,13 @@ public class KafkaClickEventSource {
                     WatermarkStrategy.forMonotonousTimestamps(),
                     "KafkaClickEventSource")
               .map(json -> mapper.readValue(json, ClickEvent.class));
+    }
+
+    @Builder
+    @Getter
+    public static class KafkaClickEventSourceContext {
+        private String brokers;
+        private String topic;
+        private String groupId;
     }
 }

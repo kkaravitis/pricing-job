@@ -1,5 +1,6 @@
 package com.wordpress.kkaravitis.pricing.infrastructure.source;
 
+import lombok.Builder;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -23,15 +24,13 @@ public class KafkaModelBroadcastSource {
     private final KafkaSource<byte[]> kafkaSource;
 
     /**
-     * @param brokers Kafka bootstrap servers
-     * @param topic   Kafka topic carrying serialized model messages
-     * @param groupId Consumer group ID
+     * @param context Source context.
      */
-    public KafkaModelBroadcastSource(String brokers, String topic, String groupId) {
+    public KafkaModelBroadcastSource(KafkaModelBroadcastSourceContext context) {
         this.kafkaSource = KafkaSource.<byte[]>builder()
-              .setBootstrapServers(brokers)
-              .setTopics(topic)
-              .setGroupId(groupId)
+              .setBootstrapServers(context.brokers)
+              .setTopics(context.topic)
+              .setGroupId(context.groupId)
               .setStartingOffsets(OffsetsInitializer.latest())
               // Use Flink's ByteArrayDeserializationSchema
               .setValueOnlyDeserializer(new RawByteDeserializationSchema())
@@ -45,5 +44,12 @@ public class KafkaModelBroadcastSource {
         return env
               .fromSource(kafkaSource, WatermarkStrategy.noWatermarks(), "KafkaModelSource")
               .broadcast(MODEL_DESCRIPTOR);
+    }
+
+    @Builder
+    public static class KafkaModelBroadcastSourceContext {
+        private String brokers;
+        private String topic;
+        private String groupId;
     }
 }

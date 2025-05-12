@@ -3,7 +3,10 @@ package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 import com.wordpress.kkaravitis.pricing.adapters.FlinkEmergencyAdjustmentRepository;
 import com.wordpress.kkaravitis.pricing.domain.EmergencyPriceAdjustment;
 import com.wordpress.kkaravitis.pricing.domain.OrderEvent;
+import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.OrderCdcSource;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.OrderCdcSource.OrderCdcSourceContext;
+import java.util.List;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.pattern.Pattern;
@@ -14,8 +17,6 @@ import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.windowing.time.Time;
-
-import java.util.List;
 import org.apache.flink.util.Collector;
 
 /**
@@ -23,18 +24,23 @@ import org.apache.flink.util.Collector;
  */
 public class AnomalyDetectionPipelineFactory {
 
-    public void build(StreamExecutionEnvironment env) {
+    public void build(StreamExecutionEnvironment env, Configuration config) {
         // 1) Ingest order events via CDC
         OrderCdcSource ordersCdc = new OrderCdcSource(
-              "db-host", 3306,
-              "shop_db", "orders",
-              "dbuser", "dbpass"
+              OrderCdcSourceContext.builder()
+                    .host(config.get(PricingConfigOptions.ORDER_CDC_HOST))
+                    .database(config.get(PricingConfigOptions.ORDER_CDC_DATABASE))
+                    .port(config.get(PricingConfigOptions.ORDER_CDC_PORT))
+                    .password(config.get(PricingConfigOptions.ORDER_CDC_PASSWORD))
+                    .table(config.get(PricingConfigOptions.ORDER_CDC_TABLE))
+                    .user(config.get(PricingConfigOptions.ORDER_CDC_USER))
+                    .build()
         );
         DataStream<OrderEvent> orders = ordersCdc.create(env);
 
         // 2) Define a CEP pattern: ten or more events in 1 minute
         Pattern<OrderEvent, ?> flashSalePattern = Pattern.<OrderEvent>begin("start")
-              .where(new SimpleCondition<OrderEvent>() {
+              .where(new SimpleCondition<>() {
                   @Override
                   public boolean filter(OrderEvent value) {
                       return true;
@@ -71,8 +77,7 @@ public class AnomalyDetectionPipelineFactory {
                         Context ctx,
                         Collector<Void> out
                   ) throws Exception {
-                      emergencyAdjustmentRepository.updateAdjustment(adjustment.getProductId(),
-                            adjustment.getAdjustmentFactor());
+                      emergencyAdjustmentRepository.updateAdjustment(adjustment.getAdjustmentFactor());
                   }
               })
               .name("UpdateEmergencyAdjustmentState");

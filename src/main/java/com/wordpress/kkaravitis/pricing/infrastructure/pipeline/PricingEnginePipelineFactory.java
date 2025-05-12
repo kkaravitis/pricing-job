@@ -8,8 +8,11 @@ import com.wordpress.kkaravitis.pricing.adapters.competitor.FlinkCompetitorPrice
 import com.wordpress.kkaravitis.pricing.adapters.ml.MlModelAdapter;
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.PricingResult;
+import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcastSource;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcastSource.KafkaModelBroadcastSourceContext;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
+import org.apache.flink.configuration.Configuration;
 import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
@@ -19,10 +22,14 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.clients.producer.ProducerConfig;
 
 public class PricingEnginePipelineFactory {
-        public void build(DataStream<ClickEvent> clicks, StreamExecutionEnvironment env) {
+        public void build(DataStream<ClickEvent> clicks, StreamExecutionEnvironment env, Configuration config) {
 
             KafkaModelBroadcastSource modelCdc =
-                  new KafkaModelBroadcastSource("localhost:9092", "model-topic", "model-group");//TODO: Pass from configuration file
+                  new KafkaModelBroadcastSource(KafkaModelBroadcastSourceContext.builder()
+                        .brokers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))
+                        .topic(config.get(PricingConfigOptions.KAFKA_MODEL_TOPIC))
+                        .groupId(config.get(PricingConfigOptions.KAFKA_MODEL_GROUP_ID))
+                        .build());
 
             SingleOutputStreamOperator<PricingResult> priced = clicks
                   .keyBy(ClickEvent::getProductId)
@@ -44,10 +51,10 @@ public class PricingEnginePipelineFactory {
 
             priced.sinkTo(KafkaSink
                   .<PricingResult>builder()
-                  .setBootstrapServers("localhost:9092")//TODO: Pass from configuration file
+                  .setBootstrapServers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))
                   .setRecordSerializer(
                         KafkaRecordSerializationSchema.<PricingResult>builder()
-                              .setTopic("pricing-results")
+                              .setTopic(config.get(PricingConfigOptions.KAFKA_PRICING_TOPIC))
                               .setKeySerializationSchema(
                                     result ->  result.getProduct().getProductId().getBytes()
                               )
@@ -57,7 +64,7 @@ public class PricingEnginePipelineFactory {
                               .build()
                   )
                   .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
-                  .setTransactionalIdPrefix("pricing-txn-")
+                  .setTransactionalIdPrefix(config.get(PricingConfigOptions.KAFKA_PRICING_TXN_ID_PREFIX))
                   .setProperty(ProducerConfig.ACKS_CONFIG, "all")
                   .setProperty(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "true")
                   .build())
@@ -69,16 +76,16 @@ public class PricingEnginePipelineFactory {
                         " new=" + alert.getNewPrice())
                   .sinkTo(KafkaSink
                         .<String>builder()
-                        .setBootstrapServers("localhost:9092")//TODO: Pass from configuration file
+                        .setBootstrapServers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))
                         .setRecordSerializer(
                               KafkaRecordSerializationSchema.builder()
-                                    .setTopic("pricing-alerts")
+                                    .setTopic(config.get(PricingConfigOptions.KAFKA_ALERTS_TOPIC))
                                     .setKeySerializationSchema(new SimpleStringSchema())
                                     .setValueSerializationSchema(new SimpleStringSchema())
                                     .build()
                         )
                         .setDeliveryGuarantee(DeliveryGuarantee.EXACTLY_ONCE)
-                        .setTransactionalIdPrefix("pricing-alerts-txn-")
+                        .setTransactionalIdPrefix(config.get(PricingConfigOptions.KAFKA_ALERTS_TXN_ID_PREFIX))
                         .build())
                   .name("PricingAlertSink");
         }

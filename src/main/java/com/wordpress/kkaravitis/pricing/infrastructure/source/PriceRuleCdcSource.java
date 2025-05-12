@@ -8,6 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ververica.cdc.connectors.mysql.source.MySqlSource;
 import com.ververica.cdc.connectors.mysql.table.StartupOptions;
 import com.ververica.cdc.debezium.JsonDebeziumDeserializationSchema;
+import lombok.Builder;
+import lombok.Getter;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -20,17 +22,15 @@ public class PriceRuleCdcSource {
     private static final ObjectMapper MAPPER = new ObjectMapper();
     private final MySqlSource<String> cdcSource;
 
-    public PriceRuleCdcSource(
-          String hostname, int port, String database, String table,
-          String username, String password) {
+    public PriceRuleCdcSource(PriceRuleCdcSourceContext context) {
 
         this.cdcSource = MySqlSource.<String>builder()
-              .hostname(hostname)
-              .port(port)
-              .databaseList(database)
-              .tableList(database + "." + table)
-              .username(username)
-              .password(password)
+              .hostname(context.hostname)
+              .port(context.port)
+              .databaseList(context.database)
+              .tableList(context.database + "." + context.table)
+              .username(context.username)
+              .password(context.password)
               .startupOptions(StartupOptions.initial())
               .deserializer(new JsonDebeziumDeserializationSchema())
               .build();
@@ -52,5 +52,16 @@ public class PriceRuleCdcSource {
                         new PriceRule(new Money(min, "USD"), new Money(max, "USD"))
                   );
               });
+    }
+
+    @Builder
+    @Getter
+    public static class PriceRuleCdcSourceContext {
+        private String hostname;
+        private Integer port;
+        private String database;
+        private String table;
+        private String username;
+        private String password;
     }
 }
