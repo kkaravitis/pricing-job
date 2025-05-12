@@ -2,15 +2,14 @@ package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wordpress.kkaravitis.pricing.domain.PricingRuntimeException;
+import lombok.NoArgsConstructor;
 import org.apache.flink.api.common.serialization.SerializationSchema;
 
+@NoArgsConstructor
 public class JsonPojoSchema<T> implements SerializationSchema<T> {
-    private final Class<T> clazz;
-    private transient ObjectMapper mapper;
 
-    public JsonPojoSchema(Class<T> clazz) {
-        this.clazz = clazz;
-    }
+    private transient ObjectMapper mapper;
 
     @Override
     public void open(InitializationContext context) {
@@ -22,7 +21,7 @@ public class JsonPojoSchema<T> implements SerializationSchema<T> {
         try {
             return mapper.writeValueAsBytes(element);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("Failed to JSON-serialize element: " + element, e);
+            throw new PricingRuntimeException("Failed to JSON-serialize element: " + element, e);
         }
     }
 }

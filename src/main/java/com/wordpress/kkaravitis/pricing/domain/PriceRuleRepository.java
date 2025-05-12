@@ -7,5 +7,5 @@ import java.io.Serializable;
  * Implementations could read from broadcast state or configuration stores.
  */
 public interface PriceRuleRepository extends Serializable {
-    PriceRule getPriceRule(String productId) throws Exception;//TODO: Replace with application dedicated exception
+    PriceRule getPriceRule(String productId) throws PricingException;
 }

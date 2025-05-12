@@ -12,7 +12,6 @@ import com.wordpress.kkaravitis.pricing.domain.PricingEngineService;
 import com.wordpress.kkaravitis.pricing.domain.PricingResult;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import org.apache.flink.api.common.state.MapStateDescriptor;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.configuration.Configuration;
@@ -40,10 +39,6 @@ public class PricingWithModelBroadcastFunction
           new OutputTag<PricingResult>("price-alerts"){};
 
     private static final long ONE_MINUTE = 60_000L;
-
-    /** Descriptor for the broadcast‐state of the ML model bytes */
-    public static final MapStateDescriptor<String, byte[]> MODEL_DESCRIPTOR =
-          new MapStateDescriptor<>("model-bytes", String.class, byte[].class);
 
     private final FlinkPriceRuleRepository priceRuleRepository;
     private final FlinkDemandMetricsRepository demandMetricsRepository;

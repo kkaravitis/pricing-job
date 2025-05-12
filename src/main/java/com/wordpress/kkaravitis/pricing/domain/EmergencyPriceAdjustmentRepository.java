@@ -11,5 +11,5 @@ public interface EmergencyPriceAdjustmentRepository extends Serializable {
      * @return a multiplier ≥1.0 if an emergency adjustment is active,
      *         or 1.0 if none.
      */
-    double getAdjustmentFactor(String productId) throws Exception;
+    double getAdjustmentFactor(String productId) throws PricingException;
 }

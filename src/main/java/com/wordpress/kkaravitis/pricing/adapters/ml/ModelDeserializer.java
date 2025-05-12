@@ -1,6 +1,7 @@
 package com.wordpress.kkaravitis.pricing.adapters.ml;
 
 import com.wordpress.kkaravitis.pricing.domain.Money;
+import com.wordpress.kkaravitis.pricing.domain.PricingRuntimeException;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
@@ -50,7 +51,7 @@ public class ModelDeserializer {
             return ctx -> {
                 // Build input tensor from your context features
                 float[] features = new float[] {
-                      (float) ctx.getInventoryLevel(),
+                      ctx.getInventoryLevel(),
                       (float) ctx.getDemandMetrics().getCurrentDemand(),
                       (float) ctx.getCompetitorPrice().getPrice().getAmount().doubleValue()
                 };
@@ -65,7 +66,7 @@ public class ModelDeserializer {
                 }
             };
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load TensorFlow model", e);
+            throw new PricingRuntimeException("Failed to load TensorFlow model", e);
         }
     }
 }

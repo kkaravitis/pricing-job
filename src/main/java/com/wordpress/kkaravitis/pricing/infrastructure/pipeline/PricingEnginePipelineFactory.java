@@ -1,6 +1,7 @@
 package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 
 import com.wordpress.kkaravitis.pricing.adapters.FlinkDemandMetricsRepository;
+import com.wordpress.kkaravitis.pricing.adapters.FlinkEmergencyAdjustmentRepository;
 import com.wordpress.kkaravitis.pricing.adapters.FlinkInventoryLevelRepository;
 import com.wordpress.kkaravitis.pricing.adapters.FlinkPriceRuleRepository;
 import com.wordpress.kkaravitis.pricing.adapters.competitor.FlinkCompetitorPriceRepository;
@@ -31,7 +32,8 @@ public class PricingEnginePipelineFactory {
                         new FlinkDemandMetricsRepository(),
                         new FlinkInventoryLevelRepository(),
                         new FlinkCompetitorPriceRepository(),
-                        new MlModelAdapter("current-model")
+                        new FlinkEmergencyAdjustmentRepository(),
+                        new MlModelAdapter()
                   ))
                   .name("DynamicPricingUnified");
 
@@ -42,7 +44,7 @@ public class PricingEnginePipelineFactory {
 
             priced.sinkTo(KafkaSink
                   .<PricingResult>builder()
-                  .setBootstrapServers("localhost:9092")
+                  .setBootstrapServers("localhost:9092")//TODO: Pass from configuration file
                   .setRecordSerializer(
                         KafkaRecordSerializationSchema.<PricingResult>builder()
                               .setTopic("pricing-results")
@@ -50,7 +52,7 @@ public class PricingEnginePipelineFactory {
                                     result ->  result.getProduct().getProductId().getBytes()
                               )
                               .setValueSerializationSchema(
-                                    new JsonPojoSchema<>(PricingResult.class)
+                                    new JsonPojoSchema<>()
                               )
                               .build()
                   )
@@ -67,7 +69,7 @@ public class PricingEnginePipelineFactory {
                         " new=" + alert.getNewPrice())
                   .sinkTo(KafkaSink
                         .<String>builder()
-                        .setBootstrapServers("localhost:9092")
+                        .setBootstrapServers("localhost:9092")//TODO: Pass from configuration file
                         .setRecordSerializer(
                               KafkaRecordSerializationSchema.builder()
                                     .setTopic("pricing-alerts")

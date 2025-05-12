@@ -3,14 +3,15 @@ package com.wordpress.kkaravitis.pricing.adapters.competitor;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
-import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPriceRepository;
+import com.wordpress.kkaravitis.pricing.domain.Money;
+import com.wordpress.kkaravitis.pricing.domain.PricingException;
 
 /**
  * Adapter: implements the domain CompetitorPriceProvider by fetching JSON price data over HTTP.
  */
 public class HttpCompetitorPriceRepository implements CompetitorPriceRepository {
-    private final HttpServiceClient client;
+    private final transient HttpServiceClient client;
     private final String baseUrl;
     private final ObjectMapper mapper = new ObjectMapper();
 
@@ -20,7 +21,7 @@ public class HttpCompetitorPriceRepository implements CompetitorPriceRepository 
     }
 
     @Override
-    public CompetitorPrice getCompetitorPrice(String productId) {
+    public CompetitorPrice getCompetitorPrice(String productId) throws PricingException {
         try {
             String url = String.format("%s/price/%s", baseUrl, productId);
             String json = client.get(url);
@@ -28,7 +29,7 @@ public class HttpCompetitorPriceRepository implements CompetitorPriceRepository 
             double price = node.get("price").asDouble();
             return new CompetitorPrice(productId, new Money(price, "USD"));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to fetch competitor price for " + productId, e);//TODO: Replace with application dedicated exception
+            throw new PricingException("Failed to fetch competitor price for " + productId, e);
         }
     }
 }

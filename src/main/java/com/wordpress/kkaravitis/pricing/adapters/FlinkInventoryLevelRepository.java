@@ -1,6 +1,8 @@
 package com.wordpress.kkaravitis.pricing.adapters;
 
 import com.wordpress.kkaravitis.pricing.domain.InventoryLevelRepository;
+import com.wordpress.kkaravitis.pricing.domain.PricingException;
+import java.io.IOException;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.typeinfo.Types;
@@ -19,13 +21,22 @@ public class FlinkInventoryLevelRepository implements InventoryLevelRepository, 
     }
 
     /** Called by your inventory‐event ProcessFunction. */
-    public void updateLevel(int level) throws Exception {
-        state.update(level);
+    public void updateLevel(int level) throws PricingException {
+        try {
+            state.update(level);
+        } catch (IOException e) {
+            throw new PricingException("Failed to update the inventory level flink state.", e);
+        }
     }
 
     @Override
-    public int getInventoryLevel(String productId) throws Exception {
-        Integer v = state.value();
+    public int getInventoryLevel(String productId) throws PricingException {
+        Integer v = null;
+        try {
+            v = state.value();
+        } catch (IOException e) {
+            throw new PricingException("Failed to fetch inventory level flink state.", e);
+        }
         return v == null ? 0 : v;
     }
 }

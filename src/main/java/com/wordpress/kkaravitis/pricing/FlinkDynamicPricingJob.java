@@ -1,6 +1,7 @@
 package com.wordpress.kkaravitis.pricing;
 
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.AnomalyDetectionPipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.CompetitorPricePipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.DemandMetricsPipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.InventoryPipelineFactory;
@@ -36,6 +37,9 @@ public class FlinkDynamicPricingJob {
 
         PriceRulePipelineFactory priceRulePipelineFactory = new PriceRulePipelineFactory();
         priceRulePipelineFactory.build(env);
+
+        AnomalyDetectionPipelineFactory anomalyDetectionPipelineFactory = new AnomalyDetectionPipelineFactory();
+        anomalyDetectionPipelineFactory.build(env);
 
         PricingEnginePipelineFactory pricingEnginePipelineFactory = new PricingEnginePipelineFactory();
         pricingEnginePipelineFactory.build(clicks, env);

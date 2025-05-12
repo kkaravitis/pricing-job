@@ -1,8 +1,6 @@
 package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 
 import com.wordpress.kkaravitis.pricing.adapters.competitor.FlinkCompetitorPriceRepository;
-import com.wordpress.kkaravitis.pricing.adapters.competitor.HttpCompetitorPriceRepository;
-import com.wordpress.kkaravitis.pricing.adapters.competitor.OkHttpServiceClient;
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
 import java.util.concurrent.TimeUnit;
@@ -17,10 +15,7 @@ public class CompetitorPricePipelineFactory {
 
     public void build (DataStream<ClickEvent> clicks) {
         // Async competitor price lookup
-        HttpCompetitorPriceRepository httpProv =
-              new HttpCompetitorPriceRepository(new OkHttpServiceClient(), "http://api.example.com");//TODO: Pass from configuration file
-
-        FlinkAsyncCompetitorEnrichment asyncEnrich = new FlinkAsyncCompetitorEnrichment(httpProv);
+        FlinkAsyncCompetitorEnrichment asyncEnrich = new FlinkAsyncCompetitorEnrichment("http://api.example.com"); //TODO: Make the hardcoded url to be passed from configuration.
 
         SingleOutputStreamOperator<String> prodIds = clicks
               .map(ClickEvent::getProductId).name("ExtractProductId");

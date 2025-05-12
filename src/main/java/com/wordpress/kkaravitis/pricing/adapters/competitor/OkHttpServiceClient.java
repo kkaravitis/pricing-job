@@ -1,5 +1,6 @@
 package com.wordpress.kkaravitis.pricing.adapters.competitor;
 
+import com.wordpress.kkaravitis.pricing.domain.PricingException;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -23,7 +24,7 @@ public class OkHttpServiceClient implements HttpServiceClient {
     }
 
     @Override
-    public String get(String url) throws IOException {
+    public String get(String url) throws PricingException {
         Request request = new Request.Builder()
               .url(url)
               .get()
@@ -31,9 +32,11 @@ public class OkHttpServiceClient implements HttpServiceClient {
 
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) {
-                throw new IOException("HTTP " + response.code() + " for " + url);
+                throw new PricingException("HTTP " + response.code() + " for " + url);
             }
             return response.body() != null ? response.body().string() : null;
+        } catch (IOException e) {
+            throw new PricingException("Failed to communicate with competitor site.", e);
         }
     }
 }

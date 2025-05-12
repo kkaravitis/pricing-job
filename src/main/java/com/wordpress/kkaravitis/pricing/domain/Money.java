@@ -17,6 +17,7 @@ import java.math.RoundingMode;
 @ToString
 public class Money implements Serializable {
     private static final long serialVersionUID = 1L;
+    private static final String CURRENCY_MISMATCH = "Currency mismatch";
 
     private final BigDecimal amount;
     private final String currency;
@@ -52,7 +53,7 @@ public class Money implements Serializable {
 
     private void ensureSameCurrency(Money other) {
         if (!this.currency.equals(other.currency)) {
-            throw new IllegalArgumentException("Currency mismatch");
+            throw new IllegalArgumentException(CURRENCY_MISMATCH);
         }
     }
 
@@ -61,7 +62,7 @@ public class Money implements Serializable {
      */
     public boolean isLessThan(Money other) {
         if (!this.currency.equals(other.currency)) {
-            throw new IllegalArgumentException("Currency mismatch");
+            throw new IllegalArgumentException(CURRENCY_MISMATCH);
         }
         return this.amount.compareTo(other.amount) < 0;
     }
@@ -71,7 +72,7 @@ public class Money implements Serializable {
      */
     public boolean isGreaterThan(Money other) {
         if (!this.currency.equals(other.currency)) {
-            throw new IllegalArgumentException("Currency mismatch");
+            throw new IllegalArgumentException(CURRENCY_MISMATCH);
         }
         return this.amount.compareTo(other.amount) > 0;
     }
