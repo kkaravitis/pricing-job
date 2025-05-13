@@ -1,12 +1,11 @@
 package com.wordpress.kkaravitis.pricing.domain;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.ToString;
-
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 
 /**
  * Represents a monetary value with precision.
@@ -39,16 +38,6 @@ public class Money implements Serializable {
     public Money multiply(double factor) {
         BigDecimal result = this.amount.multiply(BigDecimal.valueOf(factor));
         return new Money(result, currency);
-    }
-
-    public Money max(Money other) {
-        ensureSameCurrency(other);
-        return this.amount.compareTo(other.amount) >= 0 ? this : other;
-    }
-
-    public Money min(Money other) {
-        ensureSameCurrency(other);
-        return this.amount.compareTo(other.amount) <= 0 ? this : other;
     }
 
     private void ensureSameCurrency(Money other) {
