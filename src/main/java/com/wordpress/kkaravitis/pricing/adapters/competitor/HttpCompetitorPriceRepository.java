@@ -25,9 +25,15 @@ public class HttpCompetitorPriceRepository implements CompetitorPriceRepository 
         try {
             String url = String.format("%s/price/%s", baseUrl, productId);
             String json = client.get(url);
+            if (json == null) {
+                // 404 or empty → treat as zero USD
+                return new CompetitorPrice(productId, new Money(0.0, "USD"));
+            }
             JsonNode node = mapper.readTree(json);
             double price = node.get("price").asDouble();
             return new CompetitorPrice(productId, new Money(price, "USD"));
+        } catch (PricingException pricingException) {
+            throw pricingException;
         } catch (Exception e) {
             throw new PricingException("Failed to fetch competitor price for " + productId, e);
         }

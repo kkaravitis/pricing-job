@@ -29,17 +29,17 @@ public class ModelDeserializer {
             Path tmpDir = Files.createTempDirectory("tf-model-");
             Path zipPath = tmpDir.resolve("model.zip");
             Files.write(zipPath, bytes, StandardOpenOption.CREATE);
-            try (ZipInputStream zin = new ZipInputStream(Files.newInputStream(zipPath))) {
+            try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipPath))) {
                 ZipEntry entry;
-                while ((entry = zin.getNextEntry()) != null) {
+                while ((entry = zipInputStream.getNextEntry()) != null) {
                     Path out = tmpDir.resolve(entry.getName());
                     if (entry.isDirectory()) {
                         Files.createDirectories(out);
                     } else {
                         Files.createDirectories(out.getParent());
-                        Files.copy(zin, out, StandardCopyOption.REPLACE_EXISTING);
+                        Files.copy(zipInputStream, out, StandardCopyOption.REPLACE_EXISTING);
                     }
-                    zin.closeEntry();
+                    zipInputStream.closeEntry();
                 }
             }
 
@@ -49,7 +49,7 @@ public class ModelDeserializer {
 
             // 3) Return a TransformedModel wrapping the TF session
             return ctx -> {
-                // Build input tensor from your context features
+                // Build input tensor from context features
                 float[] features = new float[] {
                       ctx.getInventoryLevel(),
                       (float) ctx.getDemandMetrics().getCurrentDemand(),

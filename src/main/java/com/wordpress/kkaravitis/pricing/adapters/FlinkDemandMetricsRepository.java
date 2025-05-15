@@ -3,44 +3,51 @@ package com.wordpress.kkaravitis.pricing.adapters;
 import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
 import com.wordpress.kkaravitis.pricing.domain.DemandMetricsRepository;
 import com.wordpress.kkaravitis.pricing.domain.PricingException;
-import org.apache.flink.api.common.state.MapState;
-import org.apache.flink.api.common.state.MapStateDescriptor;
-import org.apache.flink.api.common.typeinfo.Types;
-import org.apache.flink.api.common.functions.RuntimeContext;
-
 import java.io.Serializable;
+import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.state.ValueState;
+import org.apache.flink.api.common.state.ValueStateDescriptor;
+import org.apache.flink.api.common.typeinfo.Types;
 
-/** Keyed MapState for rolling demand metrics. */
+/**
+ * DemandMetricsRepository Flink adapter.
+ **/
 public class FlinkDemandMetricsRepository implements DemandMetricsRepository, Serializable {
-    private transient MapState<String, DemandMetrics> state;
+    private transient ValueState<DemandMetrics> state;
 
     public void initializeState(RuntimeContext ctx) {
-        MapStateDescriptor<String, DemandMetrics> desc =
-              new MapStateDescriptor<>(
+        ValueStateDescriptor<DemandMetrics> desc =
+              new ValueStateDescriptor<>(
                     "demand-metrics",
-                    Types.STRING,
                     Types.POJO(DemandMetrics.class)
               );
-        this.state = ctx.getMapState(desc);
+        this.state = ctx.getState(desc);
     }
 
-    /** Called after your sliding‐window onClick ProcessFunction. */
-    public void updateMetrics(String productId, DemandMetrics metrics) throws PricingException {
+    /**
+     * Updates metrics.
+     **/
+    public void updateMetrics(DemandMetrics metrics) throws PricingException {
         try {
-            state.put(productId, metrics);
-        } catch (Exception e) {
-            throw new PricingException("Failed to update demand metrics flink state.", e);
+            state.update(metrics);
+        } catch (Exception exception) {
+            throw new PricingException(String.format(
+                  "Failed to update demand metrics flink state for product id: %s.", metrics.getProductId()
+            ), exception);
         }
     }
 
     @Override
     public DemandMetrics getDemandMetrics(String productId) throws PricingException {
-        DemandMetrics dm = null;
+        DemandMetrics demandMetrics;
         try {
-            dm = state.get(productId);
-        } catch (Exception e) {
-            throw new PricingException("Failed to fetch demand metrics from flink state.", e);
+            demandMetrics = state.value();
+        } catch (Exception exception) {
+            throw new PricingException(String
+                  .format("Failed to fetch demand metrics from flink state for product id: %s.", productId),
+                  exception);
         }
-        return dm != null ? dm : new DemandMetrics(productId,0.0, 0.0);
+        return demandMetrics != null ? demandMetrics :
+              new DemandMetrics(productId,0.0, 0.0);
     }
 }

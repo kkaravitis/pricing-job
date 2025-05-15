@@ -7,7 +7,7 @@ import java.io.Serializable;
 import lombok.NoArgsConstructor;
 
 /**
- * ModelInferencePort that wraps a deserialized TransformedModel.
+ * ModelInferencePricePredictor that wraps a deserialized TransformedModel.
  * You must call `updateModelBytes` when new bytes arrive.
  */
 @NoArgsConstructor
@@ -17,7 +17,9 @@ public class MlModelAdapter implements ModelInferencePricePredictor, Serializabl
     private transient byte[] modelBytes;
     private transient TransformedModel model;
 
-    /** Called by your Flink operator whenever new bytes arrive. */
+    /**
+     * Called by your Flink operator whenever new bytes arrive.
+     **/
     public void updateModelBytes(byte[] bytes) {
         this.modelBytes = bytes;
         this.model = null; // force re-deserialize on next predict

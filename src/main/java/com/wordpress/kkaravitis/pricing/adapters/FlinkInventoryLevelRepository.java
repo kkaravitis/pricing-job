@@ -10,7 +10,9 @@ import org.apache.flink.api.common.functions.RuntimeContext;
 
 import java.io.Serializable;
 
-/** Keyed ValueState for inventory levels. */
+/**
+ * InventoryLevelRepository Flink adapter.
+ * */
 public class FlinkInventoryLevelRepository implements InventoryLevelRepository, Serializable {
     private transient ValueState<Integer> state;
 
@@ -20,7 +22,6 @@ public class FlinkInventoryLevelRepository implements InventoryLevelRepository, 
         this.state = ctx.getState(desc);
     }
 
-    /** Called by your inventory‐event ProcessFunction. */
     public void updateLevel(int level) throws PricingException {
         try {
             state.update(level);
@@ -31,12 +32,12 @@ public class FlinkInventoryLevelRepository implements InventoryLevelRepository, 
 
     @Override
     public int getInventoryLevel(String productId) throws PricingException {
-        Integer v = null;
+        Integer value;
         try {
-            v = state.value();
+            value = state.value();
         } catch (IOException e) {
             throw new PricingException("Failed to fetch inventory level flink state.", e);
         }
-        return v == null ? 0 : v;
+        return value == null ? 0 : value;
     }
 }

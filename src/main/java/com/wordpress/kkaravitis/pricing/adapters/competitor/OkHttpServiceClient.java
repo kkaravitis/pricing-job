@@ -31,6 +31,10 @@ public class OkHttpServiceClient implements HttpServiceClient {
               .build();
 
         try (Response response = client.newCall(request).execute()) {
+            int code = response.code();
+            if (code == 404) {
+                return null;
+            }
             if (!response.isSuccessful()) {
                 throw new PricingException("HTTP " + response.code() + " for " + url);
             }

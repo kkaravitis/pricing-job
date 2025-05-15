@@ -14,7 +14,6 @@ import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
-import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 
 public class DemandMetricsPipelineFactory {
@@ -28,11 +27,11 @@ public class DemandMetricsPipelineFactory {
                           .withTimestampAssigner((evt, ts) -> evt.getTimestamp())
               );
 
-        // 2) Compute current demand (5‑min sliding window, slide 1 min)
+        // 2) Compute current demand (5‑min sliding window, slide 1 min)
         SingleOutputStreamOperator<DemandMetrics> shortWindow = clicksWithTs
               .keyBy(ClickEvent::getProductId)
               .window(SlidingEventTimeWindows.of(Time.minutes(5), Time.minutes(1)))
-              .process(new ProcessWindowFunction<ClickEvent, DemandMetrics, String, TimeWindow>() {
+              .process(new ProcessWindowFunction<>() {
                   @Override
                   public void process(
                         String productId,
@@ -48,11 +47,11 @@ public class DemandMetricsPipelineFactory {
                   }
               });
 
-        // 3) Compute historical average (1‑hour sliding window, slide 5 min)
+        // 3) Compute historical average (1‑hour sliding window, slide 5 min)
         SingleOutputStreamOperator<DemandMetrics> longWindow = clicksWithTs
               .keyBy(ClickEvent::getProductId)
               .window(SlidingEventTimeWindows.of(Time.hours(1), Time.minutes(5)))
-              .process(new ProcessWindowFunction<ClickEvent, DemandMetrics, String, TimeWindow>() {
+              .process(new ProcessWindowFunction<>() {
                   @Override
                   public void process(
                         String productId,
@@ -74,7 +73,7 @@ public class DemandMetricsPipelineFactory {
               .keyBy(DemandMetrics::getProductId)
               .intervalJoin(longWindow.keyBy(DemandMetrics::getProductId))
               .between(Time.seconds(-150), Time.seconds(150))  // ±2.5 min
-              .process(new ProcessJoinFunction<DemandMetrics, DemandMetrics, DemandMetrics>() {
+              .process(new ProcessJoinFunction<>() {
                   @Override
                   public void processElement(
                         DemandMetrics curr,
@@ -101,7 +100,7 @@ public class DemandMetricsPipelineFactory {
                   @Override
                   public void processElement(DemandMetrics dm, Context ctx, Collector<Void> out)
                         throws Exception {
-                      demandMetricsRepository.updateMetrics(dm.getProductId(), dm);
+                      demandMetricsRepository.updateMetrics(dm);
                   }
               })
               .name("UpdateDemandMetricsState");

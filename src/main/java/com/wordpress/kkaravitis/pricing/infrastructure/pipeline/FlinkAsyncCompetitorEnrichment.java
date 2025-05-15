@@ -4,8 +4,7 @@ import com.wordpress.kkaravitis.pricing.adapters.competitor.HttpCompetitorPriceR
 import com.wordpress.kkaravitis.pricing.adapters.competitor.HttpServiceClient;
 import com.wordpress.kkaravitis.pricing.adapters.competitor.OkHttpServiceClient;
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
-import com.wordpress.kkaravitis.pricing.domain.PricingException;
-import com.wordpress.kkaravitis.pricing.domain.PricingRuntimeException;
+import com.wordpress.kkaravitis.pricing.domain.Money;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.configuration.Configuration;
@@ -37,8 +36,8 @@ public class FlinkAsyncCompetitorEnrichment
               .supplyAsync(() -> {
                   try {
                       return competitorPriceRepository.getCompetitorPrice(productId);
-                  } catch (PricingException e) {
-                      throw new PricingRuntimeException(e);
+                  } catch (Exception exception) {
+                      return new CompetitorPrice(productId, new Money(0.0, "USD"));
                   }
               })
               .thenAccept(cp -> resultFuture.complete(

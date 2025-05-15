@@ -11,7 +11,7 @@ import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.api.common.time.Time;
 
 /**
- * ValueState holding the latest emergency multiplier (default 1.0).
+ * EmergencyPriceAdjustmentRepository flink adapter.
  */
 public class FlinkEmergencyAdjustmentRepository
       implements EmergencyPriceAdjustmentRepository, Serializable {
@@ -52,13 +52,13 @@ public class FlinkEmergencyAdjustmentRepository
 
     @Override
     public double getAdjustmentFactor(String productId) throws PricingException {
-        Double f = null;
+        Double factor;
         try {
-            f = state.value();
+            factor = state.value();
         } catch (IOException exception) {
             throw new PricingException("Failed to fetch the emergency adjustment factor from flink state.", exception);
         }
         // manually fallback to 1.0 if no value yet
-        return (f != null ? f : 1.0);
+        return (factor != null ? factor : 1.0);
     }
 }

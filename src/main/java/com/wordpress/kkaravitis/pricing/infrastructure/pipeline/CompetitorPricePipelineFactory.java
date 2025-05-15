@@ -26,20 +26,20 @@ public class CompetitorPricePipelineFactory {
               .unorderedWait(prodIds, asyncEnrich, 2000, TimeUnit.MILLISECONDS, 50)
               .name("AsyncCompetitorEnrichment");
 
-        FlinkCompetitorPriceRepository priceProv = new FlinkCompetitorPriceRepository();
+        FlinkCompetitorPriceRepository flinkCompetitorPriceRepository = new FlinkCompetitorPriceRepository();
 
         competitorPrices
               .keyBy(CompetitorPrice::getProductId)
               .process(new KeyedProcessFunction<String, CompetitorPrice, Void>() {
                   @Override
                   public void open(Configuration cfg) {
-                      priceProv.initializeState(getRuntimeContext());
+                      flinkCompetitorPriceRepository.initializeState(getRuntimeContext());
                   }
 
                   @Override
                   public void processElement(CompetitorPrice cp, Context ctx, Collector<Void> out)
                         throws Exception {
-                      priceProv.updatePrice(cp);
+                      flinkCompetitorPriceRepository.updatePrice(cp);
                   }
               }).name("UpdateCompetitorState");
     }
