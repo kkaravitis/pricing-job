@@ -13,13 +13,13 @@ import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcas
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcastSource.KafkaModelBroadcastSourceContext;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 
 public class PricingEnginePipelineFactory {
         public void build(DataStream<ClickEvent> clicks, StreamExecutionEnvironment env, Configuration config) {

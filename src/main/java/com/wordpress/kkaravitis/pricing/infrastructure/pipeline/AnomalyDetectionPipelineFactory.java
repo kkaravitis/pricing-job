@@ -6,7 +6,9 @@ import com.wordpress.kkaravitis.pricing.domain.OrderEvent;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.OrderCdcSource;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.OrderCdcSource.OrderCdcSourceContext;
+import java.time.Duration;
 import java.util.List;
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.pattern.Pattern;
@@ -16,7 +18,6 @@ import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 /**
@@ -48,7 +49,7 @@ public class AnomalyDetectionPipelineFactory {
               })
               .times(10)                            // require at least 10 matches
               .consecutive()                       // back‐to‐back
-              .within(Time.minutes(1));            // within one minute
+              .within(Duration.ofMinutes(1));            // within one minute
 
         // 3) Apply pattern keyed by productId
         SingleOutputStreamOperator<EmergencyPriceAdjustment> adjustments =
@@ -68,7 +69,7 @@ public class AnomalyDetectionPipelineFactory {
               .keyBy(EmergencyPriceAdjustment::getProductId)
               .process(new KeyedProcessFunction<String, EmergencyPriceAdjustment, Void>() {
                   @Override
-                  public void open(Configuration cfg) {
+                  public void open(OpenContext cfg) {
                       emergencyAdjustmentRepository.initializeState(getRuntimeContext());
                   }
                   @Override

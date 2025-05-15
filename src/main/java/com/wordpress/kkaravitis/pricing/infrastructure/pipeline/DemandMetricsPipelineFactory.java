@@ -6,6 +6,7 @@ import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
 import java.time.Duration;
 import java.util.stream.StreamSupport;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
@@ -13,7 +14,6 @@ import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 public class DemandMetricsPipelineFactory {
@@ -30,7 +30,7 @@ public class DemandMetricsPipelineFactory {
         // 2) Compute current demand (5‑min sliding window, slide 1 min)
         SingleOutputStreamOperator<DemandMetrics> shortWindow = clicksWithTs
               .keyBy(ClickEvent::getProductId)
-              .window(SlidingEventTimeWindows.of(Time.minutes(5), Time.minutes(1)))
+              .window(SlidingEventTimeWindows.of(Duration.ofMinutes(5), Duration.ofMinutes(1)))
               .process(new ProcessWindowFunction<>() {
                   @Override
                   public void process(
@@ -50,7 +50,7 @@ public class DemandMetricsPipelineFactory {
         // 3) Compute historical average (1‑hour sliding window, slide 5 min)
         SingleOutputStreamOperator<DemandMetrics> longWindow = clicksWithTs
               .keyBy(ClickEvent::getProductId)
-              .window(SlidingEventTimeWindows.of(Time.hours(1), Time.minutes(5)))
+              .window(SlidingEventTimeWindows.of(Duration.ofMinutes(1), Duration.ofMinutes(5)))
               .process(new ProcessWindowFunction<>() {
                   @Override
                   public void process(
@@ -72,7 +72,7 @@ public class DemandMetricsPipelineFactory {
         DataStream<DemandMetrics> demandMetricsStream = shortWindow
               .keyBy(DemandMetrics::getProductId)
               .intervalJoin(longWindow.keyBy(DemandMetrics::getProductId))
-              .between(Time.seconds(-150), Time.seconds(150))  // ±2.5 min
+              .between(Duration.ofSeconds(-150), Duration.ofSeconds(150))  // ±2.5 min
               .process(new ProcessJoinFunction<>() {
                   @Override
                   public void processElement(
@@ -93,7 +93,7 @@ public class DemandMetricsPipelineFactory {
               .keyBy(DemandMetrics::getProductId)
               .process(new KeyedProcessFunction<String, DemandMetrics, Void>() {
                   @Override
-                  public void open(Configuration cfg) {
+                  public void open(OpenContext openContext) {
                       demandMetricsRepository.initializeState(getRuntimeContext());
                   }
 

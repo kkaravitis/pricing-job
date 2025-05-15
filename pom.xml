@@ -11,38 +11,34 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>11</java.version>
-        <!-- Updated to latest patch release of Flink 1.18 -->
-        <flink.version>1.18.1</flink.version>
+        <java.version>17</java.version>
+        <flink.version>2.0.0</flink.version>
         <scala.binary.version>2.12</scala.binary.version>
         <lombok.version>1.18.24</lombok.version>
         <junit.jupiter.version>5.9.2</junit.jupiter.version>
-        <flink.cdc.version>2.3.0</flink.cdc.version>
+        <flink.cdc.version>3.0.1</flink.cdc.version>
     </properties>
 
     <repositories>
-        <!-- In case artifacts are not found in Maven Central -->
         <repository>
             <id>apache-releases</id>
             <name>Apache Releases</name>
             <url>https://repository.apache.org/content/repositories/releases/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
+            <releases><enabled>true</enabled></releases>
+            <snapshots><enabled>false</enabled></snapshots>
         </repository>
     </repositories>
 
     <dependencies>
+        <!-- Lombok -->
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
             <version>${lombok.version}</version>
             <scope>provided</scope>
         </dependency>
-        <!-- Flink Core & Streaming (provided by the cluster) -->
+
+        <!-- Flink Core & Streaming -->
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-streaming-java</artifactId>
@@ -54,7 +50,14 @@
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-connector-kafka</artifactId>
-            <version>3.0.1-1.18</version>
+            <version>4.0.0-2.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-connector-base</artifactId>
+            <version>${flink.version}</version>
             <scope>provided</scope>
         </dependency>
 
@@ -62,7 +65,7 @@
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-cep</artifactId>
-            <version>${flink.version}</version>
+            <version>2.0.0</version>
             <scope>provided</scope>
         </dependency>
 
@@ -70,11 +73,24 @@
         <dependency>
             <groupId>org.apache.flink</groupId>
             <artifactId>flink-statebackend-rocksdb</artifactId>
-            <version>${flink.version}</version>
+            <version>2.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- CDC (MySQL) Connector -->
+        <dependency>
+            <groupId>com.ververica</groupId>
+            <artifactId>flink-connector-mysql-cdc</artifactId>
+            <version>${flink.cdc.version}</version>
             <scope>provided</scope>
         </dependency>
 
         <!-- JSON (De)serialization -->
+        <dependency>
+            <groupId>org.apache.flink</groupId>
+            <artifactId>flink-json</artifactId>
+            <version>2.0.0</version>
+        </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -86,7 +102,7 @@
             <version>2.14.0</version>
         </dependency>
 
-        <!-- Logging -->
+        <!-- Logging, HTTP, TensorFlow, etc. -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
@@ -97,31 +113,18 @@
             <artifactId>log4j-slf4j-impl</artifactId>
             <version>2.17.0</version>
         </dependency>
-
         <dependency>
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>4.9.3</version>
         </dependency>
         <dependency>
-            <groupId>com.ververica</groupId>
-            <artifactId>flink-connector-mysql-cdc</artifactId>
-            <version>${flink.cdc.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.tensorflow</groupId>
             <artifactId>tensorflow</artifactId>
             <version>1.15.0</version>
         </dependency>
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-json</artifactId>
-            <version>1.18.0</version>
-        </dependency>
 
         <!-- Testing -->
-        <!-- Testing with JUnit 5 -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-api</artifactId>
@@ -146,12 +149,11 @@
             <version>4.8.1</version>
             <scope>test</scope>
         </dependency>
-
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Compiler Plugin with Lombok annotation processing -->
+            <!-- Compiler Plugin -->
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <version>3.11.0</version>
@@ -168,7 +170,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Surefire plugin for JUnit 5 -->
+            <!-- Surefire for JUnit 5 -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -178,7 +180,7 @@
                 </configuration>
             </plugin>
 
-            <!-- Shade Plugin for Uber-JAR -->
+            <!-- Shade for Uber-JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-shade-plugin</artifactId>
@@ -186,9 +188,7 @@
                 <executions>
                     <execution>
                         <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
+                        <goals><goal>shade</goal></goals>
                         <configuration>
                             <createDependencyReducedPom>false</createDependencyReducedPom>
                             <filters>
@@ -210,20 +210,18 @@
                     </execution>
                 </executions>
             </plugin>
+
+            <!-- Maven Toolchains for per-project JDK -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-toolchains-plugin</artifactId>
                 <version>3.1.0</version>
                 <executions>
-                    <execution>
-                        <goals><goal>toolchain</goal></goals>
-                    </execution>
+                    <execution><goals><goal>toolchain</goal></goals></execution>
                 </executions>
                 <configuration>
                     <toolchains>
-                        <jdk>
-                            <version>${java.version}</version>
-                        </jdk>
+                        <jdk><version>${java.version}</version></jdk>
                     </toolchains>
                 </configuration>
             </plugin>

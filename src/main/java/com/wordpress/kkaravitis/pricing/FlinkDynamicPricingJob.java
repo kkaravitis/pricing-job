@@ -11,10 +11,11 @@ import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PriceRulePipelin
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PricingEnginePipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaClickEventSource;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaClickEventSource.KafkaClickEventSourceContext;
-import org.apache.flink.api.java.utils.ParameterTool;
+
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.util.ParameterTool;
 
 /**
  * Flink job that unifies price-rule and model updates via a single broadcast stream, enriches with async competitor prices, and computes dynamic pricing.

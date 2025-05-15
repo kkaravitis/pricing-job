@@ -5,6 +5,7 @@ import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import java.util.concurrent.TimeUnit;
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
@@ -32,7 +33,7 @@ public class CompetitorPricePipelineFactory {
               .keyBy(CompetitorPrice::getProductId)
               .process(new KeyedProcessFunction<String, CompetitorPrice, Void>() {
                   @Override
-                  public void open(Configuration cfg) {
+                  public void open(OpenContext openContext) {
                       flinkCompetitorPriceRepository.initializeState(getRuntimeContext());
                   }
 

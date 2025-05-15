@@ -10,9 +10,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
-import org.apache.flink.api.java.utils.ParameterTool;
 import org.apache.flink.configuration.ConfigOptions;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.util.ParameterTool;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -50,9 +50,11 @@ class ConfigurationFactoryTest {
     void testBuildWithExternalConfig(@TempDir Path tmp) throws IOException {
         // 1) write a small config.yaml
         String yaml =
-              "foo:\n" +
-                    "  bar: \"baz\"\n" +
-                    "number: 12345\n";
+              """
+                    foo:
+                      bar: "baz"
+                    number: 12345
+                    """;
         System.out.println(yaml);
         Path cfgFile = tmp.resolve("config.yaml");
         Files.writeString(cfgFile, yaml);
@@ -78,7 +80,7 @@ class ConfigurationFactoryTest {
     @Test
     void testBuildInvalidConfigLocation() {
         // non-existent folder
-        ParameterTool params = ParameterTool.fromArgs(new String[] {
+        ParameterTool params = ParameterTool.fromArgs(new String[]{
               "--configLocation", "/path/does/not/exist"
         });
         assertThrows(IOException.class, () -> factory.build(params));
