@@ -13,13 +13,13 @@ import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcas
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcastSource.KafkaModelBroadcastSourceContext;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.Configuration;
-import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 
 public class PricingEnginePipelineFactory {
         public void build(DataStream<ClickEvent> clicks, StreamExecutionEnvironment env, Configuration config) {
@@ -32,7 +32,7 @@ public class PricingEnginePipelineFactory {
                         .build());
 
             SingleOutputStreamOperator<PricingResult> priced = clicks
-                  .keyBy(ClickEvent::getProductId)
+                  .keyBy(ClickEvent::productId)
                   .connect(modelCdc.create(env))
                   .process(new PricingWithModelBroadcastFunction(
                         new FlinkPriceRuleRepository(),
@@ -56,7 +56,7 @@ public class PricingEnginePipelineFactory {
                         KafkaRecordSerializationSchema.<PricingResult>builder()
                               .setTopic(config.get(PricingConfigOptions.KAFKA_PRICING_TOPIC))
                               .setKeySerializationSchema(
-                                    result ->  result.getProduct().getProductId().getBytes()
+                                    result ->  result.product().productId().getBytes()
                               )
                               .setValueSerializationSchema(
                                     new JsonPojoSchema<>()
@@ -72,8 +72,8 @@ public class PricingEnginePipelineFactory {
 
             // alert sink: you could log, side-output to another Kafka topic, etc.
             alerts
-                  .map(alert -> "ALERT: price jump for " + alert.getProduct().getProductId() +
-                        " new=" + alert.getNewPrice())
+                  .map(alert -> "ALERT: price jump for " + alert.product().productId() +
+                        " new=" + alert.newPrice())
                   .sinkTo(KafkaSink
                         .<String>builder()
                         .setBootstrapServers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))

@@ -1,5 +1,6 @@
 package com.wordpress.kkaravitis.pricing.domain;
 
+import java.io.Serial;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -15,6 +16,7 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 public class Money implements Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
     private static final String CURRENCY_MISMATCH = "Currency mismatch";
 

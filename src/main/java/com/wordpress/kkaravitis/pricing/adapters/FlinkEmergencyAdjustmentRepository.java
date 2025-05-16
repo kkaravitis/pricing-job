@@ -4,11 +4,11 @@ import com.wordpress.kkaravitis.pricing.domain.EmergencyPriceAdjustmentRepositor
 import com.wordpress.kkaravitis.pricing.domain.PricingException;
 import java.io.IOException;
 import java.io.Serializable;
+import java.time.Duration;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.StateTtlConfig;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.api.common.time.Time;
 
 /**
  * EmergencyPriceAdjustmentRepository flink adapter.
@@ -24,7 +24,7 @@ public class FlinkEmergencyAdjustmentRepository
     public void initializeState(RuntimeContext ctx) {
 
         StateTtlConfig ttlConfig = StateTtlConfig
-              .newBuilder(Time.minutes(10))
+              .newBuilder(Duration.ofMinutes(10))
               .setUpdateType(StateTtlConfig.UpdateType.OnCreateAndWrite)
               .setStateVisibility(StateTtlConfig.StateVisibility.NeverReturnExpired)
               .build();

@@ -5,6 +5,7 @@ import com.wordpress.kkaravitis.pricing.domain.InventoryEvent;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.InventoryCdcSource;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.InventoryCdcSource.InventoryCdcSourceContext;
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -27,17 +28,17 @@ public class InventoryPipelineFactory {
         DataStream<InventoryEvent> inventoryStream = invCdc.create(env);
         FlinkInventoryLevelRepository invProv = new FlinkInventoryLevelRepository();
         inventoryStream
-              .keyBy(InventoryEvent::getProductId)
+              .keyBy(InventoryEvent::productId)
               .process(new KeyedProcessFunction<String, InventoryEvent, Void>() {
                   @Override
-                  public void open(Configuration cfg) {
+                  public void open(OpenContext openContext) {
                       invProv.initializeState(getRuntimeContext());
                   }
 
                   @Override
                   public void processElement(InventoryEvent ie, Context ctx, Collector<Void> out)
                         throws Exception {
-                      invProv.updateLevel(ie.getLevel());
+                      invProv.updateLevel(ie.level());
                   }
               })
               .name("UpdateInventoryState");

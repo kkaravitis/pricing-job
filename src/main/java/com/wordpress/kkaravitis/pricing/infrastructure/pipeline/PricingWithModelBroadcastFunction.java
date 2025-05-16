@@ -12,9 +12,9 @@ import com.wordpress.kkaravitis.pricing.domain.PricingEngineService;
 import com.wordpress.kkaravitis.pricing.domain.PricingResult;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.TimerService;
 import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
 import org.apache.flink.util.Collector;
@@ -67,7 +67,7 @@ public class PricingWithModelBroadcastFunction
     }
 
     @Override
-    public void open(Configuration parameters) {
+    public void open(OpenContext openContext) {
         priceRuleRepository.initializeState(getRuntimeContext());
         demandMetricsRepository.initializeState(getRuntimeContext());
         inventoryLevelRepository.initializeState(getRuntimeContext());
@@ -106,7 +106,7 @@ public class PricingWithModelBroadcastFunction
           ReadOnlyContext ctx,
           Collector<PricingResult> out
     ) throws Exception {
-        String productId = click.getProductId();
+        String productId = click.productId();
         PricingResult result = pricingEngineService.computePrice(productId);
         out.collect(result);
 
@@ -125,7 +125,7 @@ public class PricingWithModelBroadcastFunction
         PricingResult result = pricingEngineService.computePrice(productId);
         Money previous = lastPriceState.value();
         if (previous != null) {
-            BigDecimal change = result.getNewPrice().getAmount()
+            BigDecimal change = result.newPrice().getAmount()
                   .subtract(previous.getAmount())
                   .divide(previous.getAmount(), RoundingMode.HALF_UP);
             if (change.compareTo(BigDecimal.valueOf(0.5)) > 0) {

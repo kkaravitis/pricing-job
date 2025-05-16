@@ -1,10 +1,8 @@
 package com.wordpress.kkaravitis.pricing.adapters.competitor;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PricingException;
-import com.wordpress.kkaravitis.pricing.domain.PricingRuntimeException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -35,8 +33,8 @@ class HttpCompetitorPriceRepositoryTest {
 
         CompetitorPrice cp = repo.getCompetitorPrice(pid);
 
-        assertEquals(pid, cp.getProductId());
-        assertEquals(new Money(42.5, "USD"), cp.getPrice());
+        assertEquals(pid, cp.productId());
+        assertEquals(new Money(42.5, "USD"), cp.price());
     }
 
     @Test

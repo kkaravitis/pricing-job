@@ -67,7 +67,7 @@ class PricingEngineServiceTest {
         PricingResult result = serviceUnderTest.computePrice(pid);
 
         // then
-        assertEquals(new Money(1.08, "USD"), result.getNewPrice());
+        assertEquals(new Money(1.08, "USD"), result.newPrice());
     }
 
     @Test
@@ -94,7 +94,7 @@ class PricingEngineServiceTest {
         // then
         assertEquals(
               new Money(2.96, "USD"),
-              result.getNewPrice(),
+              result.newPrice(),
               "Should apply demand, inventory, emergency then clamp to max"
         );
     }

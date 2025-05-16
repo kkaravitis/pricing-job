@@ -32,7 +32,7 @@ public class FlinkDemandMetricsRepository implements DemandMetricsRepository, Se
             state.update(metrics);
         } catch (Exception exception) {
             throw new PricingException(String.format(
-                  "Failed to update demand metrics flink state for product id: %s.", metrics.getProductId()
+                  "Failed to update demand metrics flink state for product id: %s.", metrics.productId()
             ), exception);
         }
     }

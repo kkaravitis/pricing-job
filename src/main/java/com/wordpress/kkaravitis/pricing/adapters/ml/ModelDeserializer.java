@@ -51,9 +51,9 @@ public class ModelDeserializer {
             return ctx -> {
                 // Build input tensor from context features
                 float[] features = new float[] {
-                      ctx.getInventoryLevel(),
-                      (float) ctx.getDemandMetrics().getCurrentDemand(),
-                      (float) ctx.getCompetitorPrice().getPrice().getAmount().doubleValue()
+                      ctx.inventoryLevel(),
+                      (float) ctx.demandMetrics().currentDemand(),
+                      (float) ctx.competitorPrice().price().getAmount().doubleValue()
                 };
                 try (Tensor<Float> input = Tensor.create(new long[]{1, features.length}, FloatBuffer.wrap(features));
                       Tensor<Float> output = session.runner()
@@ -62,7 +62,7 @@ public class ModelDeserializer {
                             .run().get(0).expect(Float.class)) {
                     float[][] outVal = new float[1][1];
                     output.copyTo(outVal);
-                    return new Money(outVal[0][0], ctx.getPriceRule().getMinPrice().getCurrency());
+                    return new Money(outVal[0][0], ctx.priceRule().minPrice().getCurrency());
                 }
             };
         } catch (IOException e) {

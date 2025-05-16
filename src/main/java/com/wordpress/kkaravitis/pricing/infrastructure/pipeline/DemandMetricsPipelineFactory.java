@@ -6,14 +6,13 @@ import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
 import java.time.Duration;
 import java.util.stream.StreamSupport;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.configuration.Configuration;
+import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.util.Collector;
 
 public class DemandMetricsPipelineFactory {
@@ -24,13 +23,13 @@ public class DemandMetricsPipelineFactory {
               .assignTimestampsAndWatermarks(
                     WatermarkStrategy
                           .<ClickEvent>forBoundedOutOfOrderness(Duration.ofSeconds(30))
-                          .withTimestampAssigner((evt, ts) -> evt.getTimestamp())
+                          .withTimestampAssigner((evt, ts) -> evt.timestamp())
               );
 
         // 2) Compute current demand (5‑min sliding window, slide 1 min)
         SingleOutputStreamOperator<DemandMetrics> shortWindow = clicksWithTs
-              .keyBy(ClickEvent::getProductId)
-              .window(SlidingEventTimeWindows.of(Time.minutes(5), Time.minutes(1)))
+              .keyBy(ClickEvent::productId)
+              .window(SlidingEventTimeWindows.of(Duration.ofMinutes(5), Duration.ofMinutes(1)))
               .process(new ProcessWindowFunction<>() {
                   @Override
                   public void process(
@@ -49,8 +48,8 @@ public class DemandMetricsPipelineFactory {
 
         // 3) Compute historical average (1‑hour sliding window, slide 5 min)
         SingleOutputStreamOperator<DemandMetrics> longWindow = clicksWithTs
-              .keyBy(ClickEvent::getProductId)
-              .window(SlidingEventTimeWindows.of(Time.hours(1), Time.minutes(5)))
+              .keyBy(ClickEvent::productId)
+              .window(SlidingEventTimeWindows.of(Duration.ofMinutes(1), Duration.ofMinutes(5)))
               .process(new ProcessWindowFunction<>() {
                   @Override
                   public void process(
@@ -70,9 +69,9 @@ public class DemandMetricsPipelineFactory {
         //    with the latest longWindow record within ±2.5 minutes of its window end.
 
         DataStream<DemandMetrics> demandMetricsStream = shortWindow
-              .keyBy(DemandMetrics::getProductId)
-              .intervalJoin(longWindow.keyBy(DemandMetrics::getProductId))
-              .between(Time.seconds(-150), Time.seconds(150))  // ±2.5 min
+              .keyBy(DemandMetrics::productId)
+              .intervalJoin(longWindow.keyBy(DemandMetrics::productId))
+              .between(Duration.ofSeconds(-150), Duration.ofSeconds(150))  // ±2.5 min
               .process(new ProcessJoinFunction<>() {
                   @Override
                   public void processElement(
@@ -81,19 +80,19 @@ public class DemandMetricsPipelineFactory {
                         Context ctx,
                         Collector<DemandMetrics> out) {
                       out.collect(new DemandMetrics(
-                            curr.getProductId(),
-                            curr.getCurrentDemand(),
-                            hist.getHistoricalAverage()
+                            curr.productId(),
+                            curr.currentDemand(),
+                            hist.historicalAverage()
                       ));
                   }
               });
 
         FlinkDemandMetricsRepository demandMetricsRepository = new FlinkDemandMetricsRepository();
         demandMetricsStream
-              .keyBy(DemandMetrics::getProductId)
+              .keyBy(DemandMetrics::productId)
               .process(new KeyedProcessFunction<String, DemandMetrics, Void>() {
                   @Override
-                  public void open(Configuration cfg) {
+                  public void open(OpenContext openContext) {
                       demandMetricsRepository.initializeState(getRuntimeContext());
                   }
 
