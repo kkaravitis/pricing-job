@@ -47,10 +47,10 @@ public class PricingEngineService {
 
         // 4) Blend competitor (70/30)
         Money price = mlPrice.multiply(0.7)
-              .add(cp.getPrice().multiply(0.3));
+              .add(cp.price().multiply(0.3));
 
         // 5) Demand adjustment
-        if (dm.getCurrentDemand() > dm.getHistoricalAverage()) {
+        if (dm.currentDemand() > dm.historicalAverage()) {
             price = price.multiply(1.05);
         }
 
@@ -66,10 +66,10 @@ public class PricingEngineService {
         }
 
         // 8) Clamp within rules
-        if (price.isLessThan(rule.getMinPrice())) {
-            price = rule.getMinPrice();
-        } else if (price.isGreaterThan(rule.getMaxPrice())) {
-            price = rule.getMaxPrice();
+        if (price.isLessThan(rule.minPrice())) {
+            price = rule.minPrice();
+        } else if (price.isGreaterThan(rule.maxPrice())) {
+            price = rule.maxPrice();
         }
 
         // 9) Return result

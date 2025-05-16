@@ -30,7 +30,7 @@ public class PriceRulePipelineFactory {
         FlinkPriceRuleRepository ruleProv = new FlinkPriceRuleRepository();
 
         ruleUpdates
-              .keyBy(PriceRuleUpdate::getProductId)
+              .keyBy(PriceRuleUpdate::productId)
               .process(new KeyedProcessFunction<String, PriceRuleUpdate, Void>() {
                   @Override
                   public void open(OpenContext openContext) {
@@ -40,7 +40,7 @@ public class PriceRulePipelineFactory {
                   @Override
                   public void processElement(PriceRuleUpdate upd, Context ctx, Collector<Void> out)
                         throws Exception {
-                      ruleProv.updateRule(upd.getPriceRule());
+                      ruleProv.updateRule(upd.priceRule());
                   }
               })
               .name("UpdatePriceRuleState");

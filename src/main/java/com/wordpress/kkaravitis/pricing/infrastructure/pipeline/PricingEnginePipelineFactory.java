@@ -32,7 +32,7 @@ public class PricingEnginePipelineFactory {
                         .build());
 
             SingleOutputStreamOperator<PricingResult> priced = clicks
-                  .keyBy(ClickEvent::getProductId)
+                  .keyBy(ClickEvent::productId)
                   .connect(modelCdc.create(env))
                   .process(new PricingWithModelBroadcastFunction(
                         new FlinkPriceRuleRepository(),
@@ -56,7 +56,7 @@ public class PricingEnginePipelineFactory {
                         KafkaRecordSerializationSchema.<PricingResult>builder()
                               .setTopic(config.get(PricingConfigOptions.KAFKA_PRICING_TOPIC))
                               .setKeySerializationSchema(
-                                    result ->  result.getProduct().getProductId().getBytes()
+                                    result ->  result.product().productId().getBytes()
                               )
                               .setValueSerializationSchema(
                                     new JsonPojoSchema<>()
@@ -72,8 +72,8 @@ public class PricingEnginePipelineFactory {
 
             // alert sink: you could log, side-output to another Kafka topic, etc.
             alerts
-                  .map(alert -> "ALERT: price jump for " + alert.getProduct().getProductId() +
-                        " new=" + alert.getNewPrice())
+                  .map(alert -> "ALERT: price jump for " + alert.product().productId() +
+                        " new=" + alert.newPrice())
                   .sinkTo(KafkaSink
                         .<String>builder()
                         .setBootstrapServers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))

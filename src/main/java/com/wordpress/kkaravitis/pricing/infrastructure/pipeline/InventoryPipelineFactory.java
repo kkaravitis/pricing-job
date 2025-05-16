@@ -28,7 +28,7 @@ public class InventoryPipelineFactory {
         DataStream<InventoryEvent> inventoryStream = invCdc.create(env);
         FlinkInventoryLevelRepository invProv = new FlinkInventoryLevelRepository();
         inventoryStream
-              .keyBy(InventoryEvent::getProductId)
+              .keyBy(InventoryEvent::productId)
               .process(new KeyedProcessFunction<String, InventoryEvent, Void>() {
                   @Override
                   public void open(OpenContext openContext) {
@@ -38,7 +38,7 @@ public class InventoryPipelineFactory {
                   @Override
                   public void processElement(InventoryEvent ie, Context ctx, Collector<Void> out)
                         throws Exception {
-                      invProv.updateLevel(ie.getLevel());
+                      invProv.updateLevel(ie.level());
                   }
               })
               .name("UpdateInventoryState");

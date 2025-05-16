@@ -54,19 +54,19 @@ public class AnomalyDetectionPipelineFactory {
         // 3) Apply pattern keyed by productId
         SingleOutputStreamOperator<EmergencyPriceAdjustment> adjustments =
               CEP.pattern(
-                          orders.keyBy(OrderEvent::getProductId),
+                          orders.keyBy(OrderEvent::productId),
                           flashSalePattern
                     )
                     .select((PatternSelectFunction<OrderEvent, EmergencyPriceAdjustment>) pattern -> {
                         List<OrderEvent> events = pattern.get("start");
-                        String pid = events.get(0).getProductId();
+                        String pid = events.get(0).productId();
                         // e.g. increase price by 20% during flash sale
                         return new EmergencyPriceAdjustment(pid, 1.2);
                     });
 
         FlinkEmergencyAdjustmentRepository emergencyAdjustmentRepository = new FlinkEmergencyAdjustmentRepository();
         adjustments
-              .keyBy(EmergencyPriceAdjustment::getProductId)
+              .keyBy(EmergencyPriceAdjustment::productId)
               .process(new KeyedProcessFunction<String, EmergencyPriceAdjustment, Void>() {
                   @Override
                   public void open(OpenContext cfg) {
@@ -78,7 +78,7 @@ public class AnomalyDetectionPipelineFactory {
                         Context ctx,
                         Collector<Void> out
                   ) throws Exception {
-                      emergencyAdjustmentRepository.updateAdjustment(adjustment.getAdjustmentFactor());
+                      emergencyAdjustmentRepository.updateAdjustment(adjustment.adjustmentFactor());
                   }
               })
               .name("UpdateEmergencyAdjustmentState");

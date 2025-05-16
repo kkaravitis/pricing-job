@@ -37,8 +37,8 @@ class FlinkCompetitorPriceRepositoryTest {
 
         CompetitorPrice result = competitorPriceRepository.getCompetitorPrice(pid);
 
-        assertEquals(pid, result.getProductId());
-        assertEquals(new Money(0.0, "USD"), result.getPrice());
+        assertEquals(pid, result.productId());
+        assertEquals(new Money(0.0, "USD"), result.price());
     }
 
     @Test
