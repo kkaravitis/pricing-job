@@ -9,8 +9,7 @@ Zips the exported directory into model.zip
 Save this as e.g. build_sum1_model.py, install TensorFlow (pip install tensorflow), then run:
 
 bash
-Αντιγραφή
-Επεξεργασία
+
 python3 build_sum1_model.py /path/to/output/model_dir /path/to/output/model.zip
 python
 Αντιγραφή
@@ -88,7 +87,6 @@ Finally we zip the entire directory so you get a model.zip which can be sent to 
 Once you run:
 
 bash
-Αντιγραφή
-Επεξεργασία
+
 python3 build_sum1_model.py ./exported_model ./model.zip
 you’ll have a model.zip you can point your Flink tests at.
