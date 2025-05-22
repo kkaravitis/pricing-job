@@ -1,15 +1,14 @@
 package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 
-import com.wordpress.kkaravitis.pricing.adapters.FlinkDemandMetricsRepository;
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
+import com.wordpress.kkaravitis.pricing.domain.MetricType;
+import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import java.time.Duration;
 import java.util.stream.StreamSupport;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
-import org.apache.flink.streaming.api.functions.KeyedProcessFunction;
 import org.apache.flink.streaming.api.functions.co.ProcessJoinFunction;
 import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
@@ -17,7 +16,7 @@ import org.apache.flink.util.Collector;
 
 public class DemandMetricsPipelineFactory {
 
-    public void build(DataStream<ClickEvent> clicks) {
+    public DataStream<MetricUpdate> build(DataStream<ClickEvent> clicks) {
         // 1) Add timestamps & watermarks
         DataStream<ClickEvent> clicksWithTs = clicks
               .assignTimestampsAndWatermarks(
@@ -49,7 +48,7 @@ public class DemandMetricsPipelineFactory {
         // 3) Compute historical average (1‑hour sliding window, slide 5 min)
         SingleOutputStreamOperator<DemandMetrics> longWindow = clicksWithTs
               .keyBy(ClickEvent::productId)
-              .window(SlidingEventTimeWindows.of(Duration.ofMinutes(1), Duration.ofMinutes(5)))
+              .window(SlidingEventTimeWindows.of(Duration.ofHours(1), Duration.ofMinutes(5)))
               .process(new ProcessWindowFunction<>() {
                   @Override
                   public void process(
@@ -87,21 +86,10 @@ public class DemandMetricsPipelineFactory {
                   }
               });
 
-        FlinkDemandMetricsRepository demandMetricsRepository = new FlinkDemandMetricsRepository();
-        demandMetricsStream
-              .keyBy(DemandMetrics::productId)
-              .process(new KeyedProcessFunction<String, DemandMetrics, Void>() {
-                  @Override
-                  public void open(OpenContext openContext) {
-                      demandMetricsRepository.initializeState(getRuntimeContext());
-                  }
-
-                  @Override
-                  public void processElement(DemandMetrics dm, Context ctx, Collector<Void> out)
-                        throws Exception {
-                      demandMetricsRepository.updateMetrics(dm);
-                  }
-              })
-              .name("UpdateDemandMetricsState");
+        return demandMetricsStream.map(dm -> new MetricUpdate(
+              dm.productId(),
+              MetricType.DEMAND,
+              dm
+        ));
     }
 }

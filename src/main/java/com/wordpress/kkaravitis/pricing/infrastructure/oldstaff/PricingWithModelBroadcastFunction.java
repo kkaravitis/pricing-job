@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
+package com.wordpress.kkaravitis.pricing.infrastructure.oldstaff;
 
 import com.wordpress.kkaravitis.pricing.adapters.FlinkDemandMetricsRepository;
 import com.wordpress.kkaravitis.pricing.adapters.FlinkEmergencyAdjustmentRepository;
@@ -73,6 +73,7 @@ public class PricingWithModelBroadcastFunction
         inventoryLevelRepository.initializeState(getRuntimeContext());
         flinkCompetitorPriceRepository.initializeState(getRuntimeContext());
         emergencyAdjustmentRepository.initializeState(getRuntimeContext());
+        mlModelAdapter.initialize();
 
         pricingEngineService = new PricingEngineService(
               demandMetricsRepository,

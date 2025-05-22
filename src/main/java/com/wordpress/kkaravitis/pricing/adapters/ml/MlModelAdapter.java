@@ -3,6 +3,7 @@ package com.wordpress.kkaravitis.pricing.adapters.ml;
 import com.wordpress.kkaravitis.pricing.domain.ModelInferencePricePredictor;
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PricingContext;
+import java.io.Serial;
 import java.io.Serializable;
 import lombok.NoArgsConstructor;
 
@@ -12,10 +13,16 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor
 public class MlModelAdapter implements ModelInferencePricePredictor, Serializable {
+    @Serial
     private static final long serialVersionUID = 1L;
 
     private transient byte[] modelBytes;
     private transient TransformedModel model;
+    private transient ModelDeserializer modelDeserializer;
+
+    public void initialize() {
+        this.modelDeserializer = new ModelDeserializer();
+    }
 
     /**
      * Called by your Flink operator whenever new bytes arrive.
@@ -31,7 +38,7 @@ public class MlModelAdapter implements ModelInferencePricePredictor, Serializabl
             if (modelBytes == null) {
                 throw new IllegalStateException("Model bytes not initialized");
             }
-            model = ModelDeserializer.deserialize(modelBytes);
+            model = modelDeserializer.deserialize(modelBytes);
         }
         return model.predict(context);
     }

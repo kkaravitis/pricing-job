@@ -1,52 +1,72 @@
 package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 
-import com.wordpress.kkaravitis.pricing.adapters.FlinkDemandMetricsRepository;
-import com.wordpress.kkaravitis.pricing.adapters.FlinkEmergencyAdjustmentRepository;
-import com.wordpress.kkaravitis.pricing.adapters.FlinkInventoryLevelRepository;
-import com.wordpress.kkaravitis.pricing.adapters.FlinkPriceRuleRepository;
-import com.wordpress.kkaravitis.pricing.adapters.competitor.FlinkCompetitorPriceRepository;
-import com.wordpress.kkaravitis.pricing.adapters.ml.MlModelAdapter;
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
+import com.wordpress.kkaravitis.pricing.domain.MetricOrClick;
+import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import com.wordpress.kkaravitis.pricing.domain.PricingResult;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcastSource;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcastSource.KafkaModelBroadcastSourceContext;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.configuration.Configuration;
+import org.apache.flink.connector.base.DeliveryGuarantee;
 import org.apache.flink.connector.kafka.sink.KafkaRecordSerializationSchema;
 import org.apache.flink.connector.kafka.sink.KafkaSink;
 import org.apache.flink.streaming.api.datastream.DataStream;
+import org.apache.flink.streaming.api.datastream.KeyedStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.util.OutputTag;
 import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.flink.connector.base.DeliveryGuarantee;
 
 public class PricingEnginePipelineFactory {
-        public void build(DataStream<ClickEvent> clicks, StreamExecutionEnvironment env, Configuration config) {
 
-            KafkaModelBroadcastSource modelCdc =
+        /**
+         * side-output tag for large price jumps
+         **/
+        public static final OutputTag<PricingResult> ALERT_TAG =
+              new OutputTag<PricingResult>("price-alerts"){};
+
+        public void build(DataStream<ClickEvent> clicks,
+              StreamExecutionEnvironment env,
+              Configuration config,
+              DataStream<MetricUpdate> metricsUnion) {
+
+            KafkaModelBroadcastSource modelBroadcast =
                   new KafkaModelBroadcastSource(KafkaModelBroadcastSourceContext.builder()
                         .brokers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))
                         .topic(config.get(PricingConfigOptions.KAFKA_MODEL_TOPIC))
                         .groupId(config.get(PricingConfigOptions.KAFKA_MODEL_GROUP_ID))
                         .build());
 
-            SingleOutputStreamOperator<PricingResult> priced = clicks
-                  .keyBy(ClickEvent::productId)
-                  .connect(modelCdc.create(env))
-                  .process(new PricingWithModelBroadcastFunction(
-                        new FlinkPriceRuleRepository(),
-                        new FlinkDemandMetricsRepository(),
-                        new FlinkInventoryLevelRepository(),
-                        new FlinkCompetitorPriceRepository(),
-                        new FlinkEmergencyAdjustmentRepository(),
-                        new MlModelAdapter()
-                  ))
+
+            // 1) wrap clicks as MetricOrClick.Click and metrics as MetricOrClick.Metric
+            DataStream<MetricOrClick> clicksWrapped = clicks
+                  .map(MetricOrClick.Click::new);
+
+            DataStream<MetricOrClick> metricsWrapped = metricsUnion
+                  .map(MetricOrClick.Metric::new);
+
+            // 2) union the two
+            DataStream<MetricOrClick> combined = clicksWrapped.union(metricsWrapped);
+
+            KeyedStream<MetricOrClick, String> keyed = combined
+                  .keyBy(mc -> {
+                      if (mc instanceof MetricOrClick.Click c) {
+                          return c.event().productId();
+                      } else {
+                          return ((MetricOrClick.Metric) mc).update().productId();
+                      }
+                  });
+
+            SingleOutputStreamOperator<PricingResult> priced = keyed
+                  .connect(modelBroadcast.create(env))
+                  .process(new UnifiedPricingFunction())
                   .name("DynamicPricingUnified");
 
 
             DataStream<PricingResult> alerts = priced
-                  .getSideOutput(PricingWithModelBroadcastFunction.ALERT_TAG);
+                  .getSideOutput(ALERT_TAG);
 
 
             priced.sinkTo(KafkaSink

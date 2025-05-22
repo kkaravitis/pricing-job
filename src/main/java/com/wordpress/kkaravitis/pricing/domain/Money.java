@@ -37,6 +37,21 @@ public class Money implements Serializable {
         return new Money(this.amount.add(other.amount), currency);
     }
 
+    public Money subtract(Money other) {
+        ensureSameCurrency(other);
+        return new Money(this.amount.subtract(other.amount), currency);
+    }
+
+    public Money divide(Money other) {
+        ensureSameCurrency(other);
+
+        return new Money(this.amount.divide(other.amount), currency);
+    }
+
+    public Money abs() {
+        return new Money(this.amount.abs(), currency);
+    }
+
     public Money multiply(double factor) {
         BigDecimal result = this.amount.multiply(BigDecimal.valueOf(factor));
         return new Money(result, currency);

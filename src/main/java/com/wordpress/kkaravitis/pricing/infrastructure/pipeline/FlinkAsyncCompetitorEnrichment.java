@@ -8,7 +8,6 @@ import com.wordpress.kkaravitis.pricing.domain.Money;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
 import org.apache.flink.api.common.functions.OpenContext;
-import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.functions.async.ResultFuture;
 import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
 

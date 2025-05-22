@@ -2,7 +2,6 @@ package com.wordpress.kkaravitis.pricing.adapters.ml;
 
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PricingRuntimeException;
-import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -10,6 +9,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.StandardOpenOption;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
+import lombok.NoArgsConstructor;
 import org.tensorflow.SavedModelBundle;
 import org.tensorflow.Session;
 import org.tensorflow.Tensor;
@@ -18,12 +18,10 @@ import org.tensorflow.Tensor;
  * Utility to convert raw model bytes into a TransformedModel instance.
  * Here we assume the model bytes are a zip of a TensorFlow SavedModel directory.
  */
+@NoArgsConstructor
 public class ModelDeserializer {
 
-    private ModelDeserializer() {
-    }
-
-    public static TransformedModel deserialize(byte[] bytes) {
+    public TransformedModel deserialize(byte[] bytes) {
         try {
             // 1) Write bytes to a temp file and unzip
             Path tmpDir = Files.createTempDirectory("tf-model-");
@@ -65,7 +63,7 @@ public class ModelDeserializer {
                     return new Money(outVal[0][0], ctx.priceRule().minPrice().getCurrency());
                 }
             };
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new PricingRuntimeException("Failed to load TensorFlow model", e);
         }
     }
