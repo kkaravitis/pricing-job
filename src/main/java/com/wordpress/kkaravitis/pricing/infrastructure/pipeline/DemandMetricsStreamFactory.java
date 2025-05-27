@@ -14,7 +14,7 @@ import org.apache.flink.streaming.api.functions.windowing.ProcessWindowFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.util.Collector;
 
-public class DemandMetricsPipelineFactory {
+public class DemandMetricsStreamFactory {
 
     public DataStream<MetricUpdate> build(DataStream<ClickEvent> clicks) {
         // 1) Add timestamps & watermarks

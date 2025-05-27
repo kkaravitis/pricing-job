@@ -10,16 +10,15 @@ import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.ConfigurationFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.AnomalyDetectionPipelineFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.CompetitorPricePipelineFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.DemandMetricsPipelineFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.InventoryPipelineFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PriceRulePipelineFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.EmergencyPriceAdjustmentsStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.CompetitorPriceStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.DemandMetricsStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.InventoryStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PriceRuleStreamFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PricingEnginePipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaClickEventSource;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaClickEventSource.KafkaClickEventSourceContext;
 import lombok.Builder;
-import lombok.Data;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -66,11 +65,11 @@ public class FlinkDynamicPricingJob {
 
         DataStream<ClickEvent> clicks = clicksSource.create(env);
 
-        DataStream<MetricUpdate> competitorStream =  new CompetitorPricePipelineFactory().build(clicks, config);
-        DataStream<MetricUpdate> demandStream = new DemandMetricsPipelineFactory().build(clicks);
-        DataStream<MetricUpdate> inventoryStream = new InventoryPipelineFactory().build(env, config);
-        DataStream<MetricUpdate> priceRuleStream = new PriceRulePipelineFactory().build(env, config);
-        DataStream<MetricUpdate> emergencyStream = new AnomalyDetectionPipelineFactory().build(env, config);
+        DataStream<MetricUpdate> competitorStream =  new CompetitorPriceStreamFactory().build(clicks, config);
+        DataStream<MetricUpdate> demandStream = new DemandMetricsStreamFactory().build(clicks);
+        DataStream<MetricUpdate> inventoryStream = new InventoryStreamFactory().build(env, config);
+        DataStream<MetricUpdate> priceRuleStream = new PriceRuleStreamFactory().build(env, config);
+        DataStream<MetricUpdate> emergencyStream = new EmergencyPriceAdjustmentsStreamFactory().build(env, config);
 
         DataStream<MetricUpdate> metricsUnion =
               demandStream.union(competitorStream, inventoryStream, priceRuleStream, emergencyStream);

@@ -5,10 +5,11 @@ import com.wordpress.kkaravitis.pricing.domain.MetricType;
 import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import com.wordpress.kkaravitis.pricing.domain.OrderEvent;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
-import com.wordpress.kkaravitis.pricing.infrastructure.source.OrderCdcSource;
-import com.wordpress.kkaravitis.pricing.infrastructure.source.OrderCdcSource.OrderCdcSourceContext;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.CommonKafkaSource;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.CommonKafkaSource.KafkaSourceContext;
 import java.time.Duration;
 import java.util.List;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.cep.CEP;
 import org.apache.flink.cep.PatternSelectFunction;
 import org.apache.flink.cep.pattern.Pattern;
@@ -21,21 +22,23 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 /**
  * Detects flash‐sale spikes (≥10 orders in 1 min) and emits EmergencyPriceAdjustment.
  */
-public class AnomalyDetectionPipelineFactory {
+public class EmergencyPriceAdjustmentsStreamFactory {
 
     public DataStream<MetricUpdate> build(StreamExecutionEnvironment env, Configuration config) {
-        // 1) Ingest order events via CDC
-        OrderCdcSource ordersCdc = new OrderCdcSource(
-              OrderCdcSourceContext.builder()
-                    .host(config.get(PricingConfigOptions.ORDER_CDC_HOST))
-                    .database(config.get(PricingConfigOptions.ORDER_CDC_DATABASE))
-                    .port(config.get(PricingConfigOptions.ORDER_CDC_PORT))
-                    .password(config.get(PricingConfigOptions.ORDER_CDC_PASSWORD))
-                    .table(config.get(PricingConfigOptions.ORDER_CDC_TABLE))
-                    .user(config.get(PricingConfigOptions.ORDER_CDC_USER))
-                    .build()
-        );
-        DataStream<OrderEvent> orders = ordersCdc.create(env);
+
+        CommonKafkaSource<OrderEvent> ordersKafkaSource =
+              new CommonKafkaSource<>(KafkaSourceContext.<OrderEvent>builder()
+                    .sourceId("OrderEvents")
+                    .groupId(config.get(PricingConfigOptions.KAFKA_ORDERS_GROUP_ID))
+                    .messageType(OrderEvent.class)
+                    .topic(config.get(PricingConfigOptions.KAFKA_ORDERS_GROUP_ID))
+                    .brokers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))
+                    .watermarkStrategySupplier(WatermarkStrategy::forMonotonousTimestamps)
+                    .bounded(config.get(PricingConfigOptions.TEST_MODE))
+              .build());
+
+
+        DataStream<OrderEvent> orderEvents = ordersKafkaSource.create(env);
 
         // 2) Define a CEP pattern: ten or more events in 1 minute
         Pattern<OrderEvent, ?> flashSalePattern = Pattern.<OrderEvent>begin("start")
@@ -52,7 +55,7 @@ public class AnomalyDetectionPipelineFactory {
         // 3) Apply pattern keyed by productId
         SingleOutputStreamOperator<EmergencyPriceAdjustment> adjustments =
               CEP.pattern(
-                          orders.keyBy(OrderEvent::productId),
+                          orderEvents.keyBy(OrderEvent::productId),
                           flashSalePattern
                     )
                     .select((PatternSelectFunction<OrderEvent, EmergencyPriceAdjustment>) pattern -> {

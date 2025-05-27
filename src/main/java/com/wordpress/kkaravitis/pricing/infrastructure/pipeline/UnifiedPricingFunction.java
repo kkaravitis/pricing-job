@@ -111,11 +111,11 @@ public class UnifiedPricingFunction
         if (mc instanceof MetricOrClick.Metric m) {
             // update the appropriate repo
             switch (m.update().type()) {
-                case DEMAND     -> {
+                case DEMAND  -> {
                     DemandMetrics demandMetrics = (DemandMetrics) m.update().payload();
                     demandMetricsRepository.updateMetrics(demandMetrics);
                 }
-                case INVENTORY  -> {
+                case INVENTORY -> {
                     InventoryEvent inventoryEvent = (InventoryEvent) m.update().payload();
                     inventoryLevelRepository.updateLevel(inventoryEvent.level());
                 }
@@ -123,11 +123,11 @@ public class UnifiedPricingFunction
                     CompetitorPrice competitorPrice = (CompetitorPrice) m.update().payload();
                     competitorPriceRepository.updatePrice(competitorPrice);
                 }
-                case RULE       -> {
+                case RULE -> {
                     PriceRuleUpdate priceRuleUpdate = (PriceRuleUpdate) m.update().payload();
                     priceRuleRepository.updateRule(priceRuleUpdate.priceRule());
                 }
-                case EMERGENCY  -> {
+                case EMERGENCY -> {
                     EmergencyPriceAdjustment emergencyPriceAdjustment = (EmergencyPriceAdjustment) m.update().payload();
                     emergencyAdjustmentRepository.updateAdjustment(emergencyPriceAdjustment.adjustmentFactor());
                 }

@@ -4,22 +4,19 @@ package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.wordpress.kkaravitis.pricing.adapters.FlinkDemandMetricsRepository;
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
+import com.wordpress.kkaravitis.pricing.domain.MetricType;
 import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import com.wordpress.kkaravitis.pricing.infrastructure.util.ClickEventDeserializationSchema;
 import com.wordpress.kkaravitis.pricing.infrastructure.util.ClickEventSerializer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.OpenContext;
-import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.connector.kafka.source.KafkaSource;
@@ -63,7 +60,6 @@ class DemandMetricsPipelineFactoryTest {
     /* ---------- test ---------- */
     @Test
     void pipelineEmitsExpectedDemandMetrics() throws Exception {
-
         produceClicks();   // 8 events, 0 … 7 minutes
 
         StreamExecutionEnvironment env =
@@ -83,7 +79,7 @@ class DemandMetricsPipelineFactoryTest {
               env.fromSource(src, WatermarkStrategy.noWatermarks(), "KafkaClicks");
 
         /* ------------ full production path (includes UpdateDemandProcess) ----- */
-        DataStream<MetricUpdate> dataStream = new DemandMetricsPipelineFactory().build(clicks);
+        DataStream<MetricUpdate> dataStream = new DemandMetricsStreamFactory().build(clicks);
 
         List<MetricUpdate> output = new ArrayList<>();
         dataStream.executeAndCollect().forEachRemaining(output::add);
@@ -92,6 +88,11 @@ class DemandMetricsPipelineFactoryTest {
 
         /* ------------ assert repository received the expected snapshot -------- */
         assertTrue(output.size() > 0);
+        assertEquals(MetricType.DEMAND, output.get(0).type());
+        assertTrue(output.get(0).payload() instanceof DemandMetrics);
+        DemandMetrics demandMetrics = (DemandMetrics)output.get(0).payload();
+        assertEquals(2, demandMetrics.currentDemand());
+
 //        DemandMetrics expected =
 //              new DemandMetrics("p-42", 120, 10);
 //        assertEquals(expected, repo.get("p-42"));

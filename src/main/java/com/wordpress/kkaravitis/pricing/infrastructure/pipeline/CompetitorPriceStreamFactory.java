@@ -11,7 +11,7 @@ import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 
-public class CompetitorPricePipelineFactory {
+public class CompetitorPriceStreamFactory {
 
     public DataStream<MetricUpdate> build (DataStream<ClickEvent> clicks, Configuration config) {
         // Async competitor price lookup

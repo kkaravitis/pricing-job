@@ -2,44 +2,32 @@ kafka:
   bootstrap.servers: "localhost:9092"
 
   click:
-    topic:   "click-topic"
-    group.id: "click-group"
+    topic: "clicks"
+    group-id: "click-group"
 
   model:
-    topic:    "model-topic"
-    group.id: "model-group"
+    topic: "ml-model"
+    group-id: "model-group"
 
   pricing:
-    topic:                 "pricing-results"
+    topic: "pricing-results"
     transactional.id.prefix: "pricing-txn-"
 
   alerts:
-    topic:                 "pricing-alerts"
+    topic:  "pricing-alerts"
     transactional.id.prefix: "pricing-alerts-txn-"
 
-inventoryCdc:
-  host:     "db-host"
-  port:     3306
-  database: "warehouse_db"
-  table:    "inventory"
-  user:     "dbuser"
-  password: "dbpass"
+  inventory:
+    topic: "inventory-level"
+    group-id: "inventory--group"
 
-priceRuleCdc:
-  host:     "db-host"
-  port:     3306
-  database: "pricing_db"
-  table:    "price_rules"
-  user:     "dbuser"
-  password: "dbpass"
+  priceRule:
+    topic: "price-rules"
+    group-id: "price-rules-group"
 
-orderCdc:
-  host:     "db-host"
-  port:     3306
-  database: "shop_db"
-  table:    "orders"
-  user:     "dbuser"
-  password: "dbpass"
+  orders:
+    topic: "orders"
+    group-id: "orders-group"
 
 competitor:
   api:

@@ -12,8 +12,7 @@ bash
 
 python3 build_sum1_model.py /path/to/output/model_dir /path/to/output/model.zip
 python
-Αντιγραφή
-Επεξεργασία
+
 #!/usr/bin/env python3
 import sys
 import os
