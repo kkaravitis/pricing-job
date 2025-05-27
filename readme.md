@@ -2,46 +2,50 @@
 
 A **Dynamic Pricing Engine** continuously adjusts product prices in real time based on evolving business signals—such as live customer demand, inventory levels, competitor pricing, and machine‑learning model predictions. By reacting to market dynamics in sub‑second latency, retailers and marketplaces can optimize revenue and inventory turnover while maintaining competitive positioning.
 
-This implementation uses **Apache Flink 1.18** to deliver a scalable, fault‑tolerant pricing service with these key capabilities:
+This implementation uses **Apache Flink 2.0.0** to deliver a scalable, fault‑tolerant pricing service.
 
-- **Multiple independent dataflows** feeding state (CDC, async HTTP, windowed aggregation).
-- **Keyed state** adapters for per-product data (inventory, demand metrics, rules, competitor prices).
-- **Broadcast state** for a single global ML model.
-- **Hexagonal design**: domain services depend only on port interfaces and value objects.
-- **Loose coupling**: separate `DataflowBuilder` classes initialize each state feed.
-- **Main pricing pipeline**: consumes click events, connects to the ML model broadcast, and delegates to domain service for price computation.
+## Requirements
 
-## Initial Requirements
+### Goals
 
-Based on the business goals and Flink features outlined below, this application must:
+1. **Real-Time Responsiveness**
+   - Prices must update within seconds of new events (clicks, orders, inventory changes, competitor price fluctuations).
+2. **Revenue Optimization**
+   - Maximize revenue by increasing prices on high demand and preventing stockouts via price incentives.
+3. **Competitive Positioning**
+   - Stay aligned with or undercut competitor pricing in real time.
+4. **Inventory Management**
+   - Adjust prices to accelerate the sale of slow-moving items and preserve scarce inventory.
+5. **Flash Sale & Anomaly Handling**
+   - Detect unusual order spikes (flash sales) and apply emergency price multipliers to capture additional margin.
 
-1. **Ingest & Pre‑process**
-    - Read **Clickstream** events from Kafka (JSON/Avro) with event‑time timestamps & watermarks.
-    - Read **Order** events via KafkaSource or Debezium CDC for anomaly detection.
-    - Read **Inventory Updates** via Flink CDC (Debezium) on the warehouse DB.
-    - Read **Pricing Rules** (human‑defined min/max bounds) and **ML Models** (serialized PMML/TensorFlow) from Kafka, to be broadcast.
+### Functional Requirements
+
+1. **Data Ingestion & Pre‑Processing**
+   - Read user **Click Events** from Kafka with event-time semantics and watermarks.
+   - Read **Order Events** from Kafka for anomaly (flash sale) detection.
+   - Read **Inventory Updates** from Kafka.
+   - Read **Pricing Rules** (min/max bounds) from Kafka.
+   - Fetch **Competitor Prices** from an external REST API.
 
 2. **Demand Aggregation**
-    - Key click events by `productId` and compute sliding windows (5 min length, 1 min slide) for current demand rate.
-    - Compute a longer historical demand average (e.g. 1 h sliding window) and store both metrics in keyed state.
+   - Calculate a **sliding window** (5-minute window, 1-minute slide) of current demand per product.
+   - Calculate a **historical demand average** using a longer window (e.g., 1-hour sliding window).
+   - Store both metrics in Flink keyed state for quick lookup.
 
-3. **Anomaly/Pattern Detection**
-    - Feed **Order** events into Flink CEP to detect flash‑sale or spike patterns requiring emergency price adjustments.
+3. **Anomaly & Flash Sale Detection**
+   - Use **Flink CEP** on Order Events to identify flash-sale patterns (e.g., 10 orders/minute spike).
+   - Trigger an **emergency price adjustment** (e.g., +20% multiplier) that expires after a configurable time-to-live.
 
-4. **Broadcast Rules & Models**
-    - Broadcast **Pricing Rules** and **Global ML Model** updates as side‑inputs so every parallel task sees the latest.
-    - Avoid large broadcast maps for rules by using keyed state or external lookups when rule sets grow large.
+4. **Pricing Calculation**
+   - **Baseline Prediction:** Use a machine learning model (TensorFlow) for an initial price.
+   - **Competitor Adjustment:** Blend competitor prices (e.g., 30% competitor, 70% ML).
+   - **Demand Adjustment:** Increase price when current demand exceeds historical average.
+   - **Inventory Adjustment:** Increase price when inventory is below a threshold (e.g., <10 units).
+   - **Emergency Adjustment:** Apply flash-sale multiplier from CEP output.
+   - Enforce **min/max price rules** to ensure legal and business constraints.
 
-5. **Price Computation**
-    - In a **KeyedBroadcastProcessFunction**, combine:
-        - Demand metrics (MapState)
-        - Current inventory (ValueState)
-        - Competitor prices (async HTTP + ValueState)
-        - Broadcast rules & ML inference
-    - Trigger on a processing‑time timer (e.g. every minute) to recalculate / emit prices even if no click occurs.
-
-6. **Sink New Prices**
-    - Send updated prices to Kafka sink with exactly‑once semantics (two‑phase commit).
-    - Emit side‑outputs for alerts (e.g. >50% price change).
-
+5. **Price Broadcasting**
+   - Publish updated prices to a Kafka sink with **exactly‑once semantics**.
+   - Emit **alerts** (side‑outputs) for significant price changes (e.g., >50% deviation).
 ---
