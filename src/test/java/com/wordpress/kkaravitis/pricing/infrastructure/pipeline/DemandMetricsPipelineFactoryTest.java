@@ -43,7 +43,6 @@ import org.testcontainers.kafka.ConfluentKafkaContainer;
 @ExtendWith(MiniClusterExtension.class)
 class DemandMetricsPipelineFactoryTest {
 
-    /* -------- Confluent Kafka -------- */
     @Container
     static final ConfluentKafkaContainer KAFKA =
           new ConfluentKafkaContainer("confluentinc/cp-kafka:7.4.0");
@@ -57,15 +56,13 @@ class DemandMetricsPipelineFactoryTest {
                       .setNumberSlotsPerTaskManager(1)
                       .build());
 
-    /* ---------- test ---------- */
     @Test
     void pipelineEmitsExpectedDemandMetrics() throws Exception {
+        // given
         produceClicks();   // 8 events, 0 … 7 minutes
-
         StreamExecutionEnvironment env =
               StreamExecutionEnvironment.getExecutionEnvironment();
         env.enableCheckpointing(200);
-
         KafkaSource<ClickEvent> src = KafkaSource.<ClickEvent>builder()
               .setBootstrapServers(KAFKA.getBootstrapServers())
               .setTopics(TOPIC)
@@ -74,51 +71,22 @@ class DemandMetricsPipelineFactoryTest {
               .setBounded(OffsetsInitializer.latest())               // finite
               .setValueOnlyDeserializer(new ClickEventDeserializationSchema())
               .build();
-
         DataStream<ClickEvent> clicks =
               env.fromSource(src, WatermarkStrategy.noWatermarks(), "KafkaClicks");
-
-        /* ------------ full production path (includes UpdateDemandProcess) ----- */
         DataStream<MetricUpdate> dataStream = new DemandMetricsStreamFactory().build(clicks);
-
         List<MetricUpdate> output = new ArrayList<>();
+
+        // when
         dataStream.executeAndCollect().forEachRemaining(output::add);
 
-        // 3) collect its output
-
-        /* ------------ assert repository received the expected snapshot -------- */
+        // then
         assertTrue(output.size() > 0);
         assertEquals(MetricType.DEMAND, output.get(0).type());
         assertTrue(output.get(0).payload() instanceof DemandMetrics);
         DemandMetrics demandMetrics = (DemandMetrics)output.get(0).payload();
         assertEquals(2, demandMetrics.currentDemand());
-
-//        DemandMetrics expected =
-//              new DemandMetrics("p-42", 120, 10);
-//        assertEquals(expected, repo.get("p-42"));
     }
 
-    /* -------- serialisable reader -------- */
-    private static final class Reader
-          extends KeyedStateReaderFunction<String, DemandMetrics>
-          implements java.io.Serializable {
-
-        private transient ValueState<DemandMetrics> state;
-
-        @Override
-        public void open(OpenContext ctx) {
-            state = getRuntimeContext().getState(
-                  new ValueStateDescriptor<>("demand", DemandMetrics.class));
-        }
-
-        @Override
-        public void readKey(String key, Context c, Collector<DemandMetrics> out)
-              throws Exception {
-            if ("p-42".equals(key)) out.collect(state.value());
-        }
-    }
-
-    /* -------- helper: eight clicks over 7 min -------- */
     private static void produceClicks() throws Exception {
         long base = Instant.parse("2025-01-01T00:00:00Z").toEpochMilli();
 
@@ -141,14 +109,6 @@ class DemandMetricsPipelineFactoryTest {
                              base + 43000)
                   .forEach(ts -> producer.send(new ProducerRecord<>(TOPIC, "producer-42",
                         new ClickEvent("producer-42", ts))));
-
-
-//            long next = base;
-//            for (int i = 0; i < 600; i++) {
-//                producer.send(new ProducerRecord<>(TOPIC, "producer-42",
-//                      new ClickEvent("producer-42", next)));
-//                next += 100;
-//            }
 
             producer.flush();
         }

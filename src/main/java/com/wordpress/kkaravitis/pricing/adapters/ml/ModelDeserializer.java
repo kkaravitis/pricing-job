@@ -1,70 +1,100 @@
 package com.wordpress.kkaravitis.pricing.adapters.ml;
 
-import com.wordpress.kkaravitis.pricing.domain.Money;
-import com.wordpress.kkaravitis.pricing.domain.PricingRuntimeException;
-import java.nio.FloatBuffer;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.nio.file.StandardOpenOption;
+import com.wordpress.kkaravitis.pricing.domain.*;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.math.BigDecimal;
+import java.nio.file.*;
+import java.util.Map;
+import java.util.Optional;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
-import lombok.NoArgsConstructor;
-import org.tensorflow.SavedModelBundle;
-import org.tensorflow.Session;
-import org.tensorflow.Tensor;
 
-/**
- * Utility to convert raw model bytes into a TransformedModel instance.
- * Here we assume the model bytes are a zip of a TensorFlow SavedModel directory.
- */
-@NoArgsConstructor
+import org.tensorflow.*;
+import org.tensorflow.ndarray.NdArrays;
+import org.tensorflow.ndarray.Shape;
+import org.tensorflow.types.TFloat32;
+import org.tensorflow.types.TString;
+
 public class ModelDeserializer {
 
     public TransformedModel deserialize(byte[] bytes) {
         try {
-            // 1) Write bytes to a temp file and unzip
+            // 1. Create temp dir and unzip model
             Path tmpDir = Files.createTempDirectory("tf-model-");
-            Path zipPath = tmpDir.resolve("model.zip");
-            Files.write(zipPath, bytes, StandardOpenOption.CREATE);
-            try (ZipInputStream zipInputStream = new ZipInputStream(Files.newInputStream(zipPath))) {
+
+            try (ZipInputStream zis = new ZipInputStream(new ByteArrayInputStream(bytes))) {
                 ZipEntry entry;
-                while ((entry = zipInputStream.getNextEntry()) != null) {
-                    Path out = tmpDir.resolve(entry.getName());
-                    if (entry.isDirectory()) {
-                        Files.createDirectories(out);
-                    } else {
-                        Files.createDirectories(out.getParent());
-                        Files.copy(zipInputStream, out, StandardCopyOption.REPLACE_EXISTING);
+                while ((entry = zis.getNextEntry()) != null) {
+                    Path outPath = tmpDir.resolve(entry.getName()).normalize();
+
+                    // Prevent Zip Slip vulnerability
+                    if (!outPath.startsWith(tmpDir)) {
+                        throw new IOException("Bad zip entry: " + entry.getName());
                     }
-                    zipInputStream.closeEntry();
+
+                    if (entry.isDirectory()) {
+                        Files.createDirectories(outPath);
+                    } else {
+                        Files.createDirectories(outPath.getParent());
+                        Files.copy(zis, outPath, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    zis.closeEntry();
                 }
             }
 
-            // 2) Load the SavedModel
-            SavedModelBundle bundle = SavedModelBundle.load(tmpDir.toString(), "serve");
-            Session session = bundle.session();
+            // 2. Find actual model directory (in case zip contains subfolder)
+            Path modelPath = findModelRoot(tmpDir);
 
-            // 3) Return a TransformedModel wrapping the TF session
+            // 3. Load model
+            SavedModelBundle bundle = SavedModelBundle.load(modelPath.toString(), "serve");
+            SessionFunction serving = bundle.function("serving_default");
+
+            // 4. Return callable model
             return ctx -> {
-                // Build input tensor from context features
-                float[] features = new float[] {
+                float[] features = new float[]{
                       ctx.inventoryLevel(),
                       (float) ctx.demandMetrics().currentDemand(),
                       (float) ctx.competitorPrice().price().getAmount().doubleValue()
                 };
-                try (Tensor<Float> input = Tensor.create(new long[]{1, features.length}, FloatBuffer.wrap(features));
-                      Tensor<Float> output = session.runner()
-                            .feed("serving_default_input", input)
-                            .fetch("StatefulPartitionedCall")
-                            .run().get(0).expect(Float.class)) {
-                    float[][] outVal = new float[1][1];
-                    output.copyTo(outVal);
-                    return new Money(outVal[0][0], ctx.priceRule().minPrice().getCurrency());
+
+                try (
+                      TFloat32 featureTensor = TFloat32.tensorOf(Shape.of(1, 3), data -> {
+                          for (int i = 0; i < features.length; i++) {
+                              data.setFloat(features[i], 0, i);
+                          }
+                      });
+                      TString productIdTensor = TString.tensorOf(
+                            NdArrays.ofObjects(String.class, Shape.of(1, 1))
+                                  .setObject(ctx.product().productId(), 0, 0)
+                      )
+                ) {
+                    try (var result = serving.call(Map.of(
+                          "serving_default_product_id", productIdTensor,
+                          "serving_default_input", featureTensor
+                    ))) {
+
+                        try (Tensor output = result.get("Identity").orElseThrow()) {
+                            float prediction = output.asRawTensor().data().asFloats().getFloat(0);
+                            return new Money(BigDecimal.valueOf(prediction), ctx.priceRule().minPrice().getCurrency());
+                        }
+                    }
                 }
             };
+
         } catch (Exception e) {
             throw new PricingRuntimeException("Failed to load TensorFlow model", e);
+        }
+    }
+
+    private Path findModelRoot(Path baseDir) throws IOException {
+        // Look for a directory containing saved_model.pb and variables/
+        try (var paths = Files.walk(baseDir, 2)) {
+            return paths
+                  .filter(Files::isDirectory)
+                  .filter(p -> Files.exists(p.resolve("saved_model.pb")) && Files.exists(p.resolve("variables")))
+                  .findFirst()
+                  .orElseThrow(() -> new IOException("No valid TensorFlow SavedModel found"));
         }
     }
 }

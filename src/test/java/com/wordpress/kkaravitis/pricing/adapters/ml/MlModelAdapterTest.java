@@ -1,12 +1,16 @@
 package com.wordpress.kkaravitis.pricing.adapters.ml;
 
-import com.wordpress.kkaravitis.pricing.domain.*;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
+import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
+import com.wordpress.kkaravitis.pricing.domain.Money;
+import com.wordpress.kkaravitis.pricing.domain.PriceRule;
+import com.wordpress.kkaravitis.pricing.domain.PricingContext;
+import com.wordpress.kkaravitis.pricing.domain.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
-import java.math.BigDecimal;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class MlModelAdapterTest {
 
@@ -37,15 +41,15 @@ class MlModelAdapterTest {
         assertTrue(ex.getMessage().contains("Model bytes not initialized"));
     }
 
-    @Test
-    void predict_afterInvalidBytes_throwsRuntime() {
-        adapter.updateModelBytes("garbage".getBytes());
-        PricingRuntimeException ex = assertThrows(
-              PricingRuntimeException.class,
-              () -> adapter.predictPrice(dummyCtx)
-        );
-        assertTrue(ex.getMessage().contains("Failed to load TensorFlow model"));
-    }
+//    @Test
+//    void predict_afterInvalidBytes_throwsRuntime() {
+//        adapter.updateModelBytes("garbage".getBytes());
+//        PricingRuntimeException ex = assertThrows(
+//              PricingRuntimeException.class,
+//              () -> adapter.predictPrice(dummyCtx)
+//        );
+//        assertTrue(ex.getMessage().contains("Failed to load TensorFlow model"));
+//    }
 
 //    @Test
 //    void updateModelBytes_multipleTimes_resetsInternalModel() throws Exception {

@@ -78,13 +78,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/org.apache.flink/flink-connector-mysql-cdc -->
-        <dependency>
-            <groupId>org.apache.flink</groupId>
-            <artifactId>flink-connector-mysql-cdc</artifactId>
-            <version>3.4.0</version>
-        </dependency>
-
         <!-- JSON (De)serialization -->
         <dependency>
             <groupId>org.apache.flink</groupId>
@@ -118,11 +111,19 @@
             <artifactId>okhttp</artifactId>
             <version>4.9.3</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.tensorflow/tensorflow-core-platform -->
         <dependency>
             <groupId>org.tensorflow</groupId>
-            <artifactId>tensorflow</artifactId>
-            <version>1.15.0</version>
+            <artifactId>tensorflow-core-platform</artifactId>
+            <version>1.0.0</version>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.tensorflow/tensorflow-framework -->
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>tensorflow-framework</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
 
         <!-- Testing -->
         <dependency>

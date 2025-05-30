@@ -20,42 +20,66 @@ class ModelDeserializerTest {
     private static byte[] validModelZip;
     private static byte[] invalidBytes = "not a zip".getBytes();
 
-//    @BeforeAll
-//    static void loadModelZip() throws Exception {
-//        try (InputStream in = ModelDeserializerTest.class.getResourceAsStream("/model.zip")) {
-//            assertNotNull(in, "Place a valid model.zip under src/test/resources");
-//            validModelZip = in.readAllBytes();
-//        }
-//    }
+    @BeforeAll
+    static void loadModelZip() throws Exception {
+        try (InputStream in = ModelDeserializerTest.class.getResourceAsStream("/pricing_saved_model.zip")) {
+            assertNotNull(in, "Place a valid model.zip under src/test/resources");
+            validModelZip = in.readAllBytes();
+        }
+    }
 
-//    @Test
-//    void deserialize_withInvalidBytes_throws() {
-//        PricingRuntimeException ex = assertThrows(
-//              PricingRuntimeException.class,
-//              () -> ModelDeserializer.deserialize(invalidBytes)
-//        );
-//        assertTrue(ex.getMessage().contains("Failed to load TensorFlow model"));
-//        assertNotNull(ex.getCause());
-//    }
+    @Test
+    void deserialize_withInvalidBytes_throws() {
+        PricingRuntimeException ex = assertThrows(
+              PricingRuntimeException.class,
+              () -> new ModelDeserializer().deserialize(invalidBytes)
+        );
+        assertNotNull(ex.getCause());
+    }
 
 
-//    @Test
-//    void deserialize_withValidZip_returnsWorkingModel() throws Exception {
-//        TransformedModel model = ModelDeserializer.deserialize(validModelZip);
-//        assertNotNull(model);
-//
-//        // Prepare a fake context: model = sum(features)+1
-//        String pid = "p1";
-//        PricingContext ctx = new PricingContext(
-//              new Product(pid),
-//              new DemandMetrics(pid, 2.5, 1.0),
-//              4,
-//              new CompetitorPrice(pid, new Money(3.5, "USD")),
-//              PriceRule.defaults()
-//        );
-//
-//        Money price = model.predict(ctx);
-//        // expected = inventory(4) + currentDemand(2.5) + competitor(3.5) + 1 = 11.0
-//        assertEquals(new Money(BigDecimal.valueOf(11.0), "USD"), price);
-//    }
+    @Test
+    void deserialize_withValidZip_returnsWorkingModel() {
+        TransformedModel model = new ModelDeserializer().deserialize(validModelZip);
+        assertNotNull(model);
+
+        PricingContext ctx = new PricingContext(
+              new Product("p-001"),
+              new DemandMetrics("p-001", 2.5, 1.0),
+              4,
+              new CompetitorPrice("p-001", new Money(35, "USD")),
+              PriceRule.defaults()
+        );
+
+        Money price = model.predict(ctx);
+        System.out.println("✅ Predicted price = " + price);
+        assertTrue(price.getAmount().compareTo(BigDecimal.ZERO) > 0);
+    }
+
+    @Test
+    void updateModelBytes_multipleTimes_resetsInternalModel() {
+        ModelDeserializer deserializer = new ModelDeserializer();
+
+        TransformedModel model1 = deserializer.deserialize(validModelZip);
+        Money price1 = model1.predict(new PricingContext(
+              new Product("p-001"),
+              new DemandMetrics("p-001", 2.0, 1.0),
+              10,
+              new CompetitorPrice("p-001", new Money(5.0, "USD")),
+              PriceRule.defaults()
+        ));
+
+        TransformedModel model2 = deserializer.deserialize(validModelZip);
+        Money price2 = model2.predict(new PricingContext(
+              new Product("p-001"),
+              new DemandMetrics("p-001", 2.0, 1.0),
+              10,
+              new CompetitorPrice("p-001", new Money(5.0, "USD")),
+              PriceRule.defaults()
+        ));
+
+        assertNotNull(price1);
+        assertNotNull(price2);
+        assertEquals(price1, price2, "Reloading the same model bytes should produce identical results");
+    }
 }
