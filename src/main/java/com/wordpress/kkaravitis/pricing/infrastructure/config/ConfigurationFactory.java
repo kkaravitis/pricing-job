@@ -12,6 +12,9 @@ import java.util.Map;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.util.ParameterTool;
 
+/**
+ * @author Konstantinos Karavitis
+ */
 public class ConfigurationFactory {
 
     public Configuration build(ParameterTool params) throws IOException {
