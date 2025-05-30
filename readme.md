@@ -1,3 +1,7 @@
+![Project Status](https://img.shields.io/badge/status-WIP-yellow.svg)
+
+**Work in Progress** 
+
 # Dynamic Pricing Flink Application
 
 A **Dynamic Pricing Engine** continuously adjusts product prices in real time based on evolving business signals—such as live customer demand, inventory levels, competitor pricing, and machine‑learning model predictions. By reacting to market dynamics in sub‑second latency, retailers and marketplaces can optimize revenue and inventory turnover while maintaining competitive positioning.

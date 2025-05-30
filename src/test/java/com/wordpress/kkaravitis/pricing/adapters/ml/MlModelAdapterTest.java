@@ -55,33 +55,4 @@ class MlModelAdapterTest {
         );
         assertTrue(ex.getMessage().contains("Model bytes not initialized"));
     }
-
-//    @Test
-//    void predict_afterInvalidBytes_throwsRuntime() {
-//        adapter.updateModelBytes("garbage".getBytes());
-//        PricingRuntimeException ex = assertThrows(
-//              PricingRuntimeException.class,
-//              () -> adapter.predictPrice(dummyCtx)
-//        );
-//        assertTrue(ex.getMessage().contains("Failed to load TensorFlow model"));
-//    }
-
-//    @Test
-//    void updateModelBytes_multipleTimes_resetsInternalModel() throws Exception {
-//        // First set valid bytes → predict succeeds
-//        byte[] valid = ModelDeserializerTest.validModelZip;  // assume same resource
-//        adapter.updateModelBytes(valid);
-//        Money first = adapter.predictPrice(dummyCtx);
-//        assertNotNull(first);
-//
-//        // Then set invalid bytes → next predict fails
-//        adapter.updateModelBytes("oops".getBytes());
-//        assertThrows(PricingRuntimeException.class,
-//              () -> adapter.predictPrice(dummyCtx));
-//
-//        // Finally clear to null via new instance → IllegalState
-//        adapter = new MlModelAdapter("test-model");
-//        assertThrows(IllegalStateException.class,
-//              () -> adapter.predictPrice(dummyCtx));
-//    }
 }

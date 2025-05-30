@@ -61,6 +61,7 @@ class DemandMetricsPipelineFactoryTest {
     @Container
     static final ConfluentKafkaContainer KAFKA =
           new ConfluentKafkaContainer("confluentinc/cp-kafka:7.4.0");
+
     private static final String TOPIC = "clicks";
 
     @RegisterExtension
@@ -75,9 +76,12 @@ class DemandMetricsPipelineFactoryTest {
     void pipelineEmitsExpectedDemandMetrics() throws Exception {
         // given
         produceClicks();   // 8 events, 0 … 7 minutes
+
         StreamExecutionEnvironment env =
               StreamExecutionEnvironment.getExecutionEnvironment();
+
         env.enableCheckpointing(200);
+
         KafkaSource<ClickEvent> src = KafkaSource.<ClickEvent>builder()
               .setBootstrapServers(KAFKA.getBootstrapServers())
               .setTopics(TOPIC)
@@ -86,9 +90,12 @@ class DemandMetricsPipelineFactoryTest {
               .setBounded(OffsetsInitializer.latest())               // finite
               .setValueOnlyDeserializer(new ClickEventDeserializationSchema())
               .build();
+
         DataStream<ClickEvent> clicks =
               env.fromSource(src, WatermarkStrategy.noWatermarks(), "KafkaClicks");
+
         DataStream<MetricUpdate> dataStream = new DemandMetricsStreamFactory().build(clicks);
+
         List<MetricUpdate> output = new ArrayList<>();
 
         // when
