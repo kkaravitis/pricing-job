@@ -38,7 +38,7 @@ This implementation uses **Apache Flink 2.0.0** to deliver a scalable, fault‑t
    - Trigger an **emergency price adjustment** (e.g., +20% multiplier) that expires after a configurable time-to-live.
 
 4. **Pricing Calculation**
-   - **Baseline Prediction:** Use a machine learning model (TensorFlow) for an initial price.
+   - **Baseline Prediction:** Use a machine learning model (TensorFlow) for an initial price. We are building and sharing the TensorFlow model here: https://github.com/kkaravitis/pricing-model
    - **Competitor Adjustment:** Blend competitor prices (e.g., 30% competitor, 70% ML).
    - **Demand Adjustment:** Increase price when current demand exceeds historical average.
    - **Inventory Adjustment:** Increase price when inventory is below a threshold (e.g., <10 units).
