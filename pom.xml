@@ -203,7 +203,7 @@
                 <version>0.8.13</version>
 
                 <executions>
-                    <!-- 1️⃣ Attach the agent before tests -->
+                    <!-- Attach the agent before tests -->
                     <execution>
                         <id>prepare-agent</id>
                         <goals>
@@ -211,7 +211,7 @@
                         </goals>
                     </execution>
 
-                    <!-- 2️⃣ Generate the HTML/XML reports after all tests -->
+                    <!-- Generate the HTML/XML reports after all tests -->
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
@@ -220,7 +220,7 @@
                         </goals>
                     </execution>
 
-                    <!-- 3️⃣ (Optional) Enforce a minimum coverage rule -->
+                    <!-- (Optional) Enforce a minimum coverage rule -->
                     <execution>
                         <id>jacoco-check</id>
                         <phase>verify</phase>
