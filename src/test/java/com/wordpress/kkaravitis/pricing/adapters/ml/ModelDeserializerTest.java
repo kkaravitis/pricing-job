@@ -67,7 +67,6 @@ class ModelDeserializerTest {
         );
 
         Money price = model.predict(ctx);
-        System.out.println("✅ Predicted price = " + price);
         assertTrue(price.getAmount().compareTo(BigDecimal.ZERO) > 0);
     }
 

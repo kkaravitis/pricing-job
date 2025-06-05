@@ -19,7 +19,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.function.Supplier;
 import lombok.Builder;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.MapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.KafkaSourceBuilder;
@@ -27,12 +30,11 @@ import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsIni
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 
-public class CommonKafkaSource<T> {
-    private final ObjectMapper mapper;
+@Slf4j
+public class CommonKafkaSource<T>  {
     private final KafkaSourceContext<T> context;
 
     public CommonKafkaSource(KafkaSourceContext<T> context) {
-        this.mapper = new ObjectMapper();
         this.context = context;
     }
 
@@ -56,7 +58,8 @@ public class CommonKafkaSource<T> {
         return env.fromSource(kafkaSource,
                     context.watermarkStrategySupplier.get(),
                     context.sourceId)
-              .map(json -> mapper.readValue(json, context.messageType));
+              .map(new StringToObjectMapFunction<>(context.messageType))
+              .returns(context.messageType);
     }
 
     @Getter
@@ -69,6 +72,18 @@ public class CommonKafkaSource<T> {
         private String groupId;
         private Supplier<WatermarkStrategy<String>> watermarkStrategySupplier;
         private boolean bounded;
+    }
+
+    @RequiredArgsConstructor
+    static class StringToObjectMapFunction<T> implements MapFunction<String, T> {
+        private static final ObjectMapper mapper = new ObjectMapper();
+
+        private final Class<T> messageType;
+
+        @Override
+        public T map(String value) throws Exception {
+            return mapper.readValue(value, messageType);
+        }
     }
 
 }

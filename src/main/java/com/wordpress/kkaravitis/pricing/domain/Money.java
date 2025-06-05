@@ -21,6 +21,8 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -28,6 +30,7 @@ import lombok.ToString;
  * Encapsulates amount and currency, providing arithmetic operations.
  */
 @Getter
+@Setter
 @EqualsAndHashCode
 @ToString
 public class Money implements Serializable {
@@ -37,6 +40,11 @@ public class Money implements Serializable {
 
     private final BigDecimal amount;
     private final String currency;
+
+    public Money() {
+        this.amount = null;
+        this.currency = null;
+    }
 
     public Money(BigDecimal amount, String currency) {
         this.amount = amount.setScale(2, RoundingMode.HALF_UP);

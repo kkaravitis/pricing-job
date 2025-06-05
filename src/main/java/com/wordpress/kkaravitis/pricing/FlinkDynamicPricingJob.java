@@ -25,15 +25,16 @@ import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.ConfigurationFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.EmergencyPriceAdjustmentsStreamFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.CompetitorPriceStreamFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.DemandMetricsStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.EmergencyPriceAdjustmentsStreamFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.InventoryStreamFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PriceRuleStreamFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PricingEnginePipelineFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaClickEventSource;
-import com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaClickEventSource.KafkaClickEventSourceContext;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.CommonKafkaSource;
+import com.wordpress.kkaravitis.pricing.infrastructure.source.CommonKafkaSource.KafkaSourceContext;
 import lombok.Builder;
+import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
@@ -71,14 +72,17 @@ public class FlinkDynamicPricingJob {
 
     public void execute(StreamExecutionEnvironment env, Configuration config) throws Exception {
         // Click events
-        KafkaClickEventSource clicksSource =
-              new KafkaClickEventSource(KafkaClickEventSourceContext.builder()
+        DataStream<ClickEvent> clicks =
+              new CommonKafkaSource<>(KafkaSourceContext.<ClickEvent>builder()
                     .brokers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))
-                    .topic(config.get(PricingConfigOptions.KAFKA_CLICK_TOPIC))
                     .groupId(config.get(PricingConfigOptions.KAFKA_CLICK_GROUP_ID))
-                    .build());
-
-        DataStream<ClickEvent> clicks = clicksSource.create(env);
+                    .topic(config.get(PricingConfigOptions.KAFKA_CLICK_TOPIC))
+                    .sourceId("clickEvents")
+                    .messageType(ClickEvent.class)
+                    .bounded(config.get(PricingConfigOptions.TEST_MODE))
+                    .watermarkStrategySupplier(WatermarkStrategy::noWatermarks)
+                    .build())
+                    .create(env);
 
         DataStream<MetricUpdate> competitorStream =  new CompetitorPriceStreamFactory().build(clicks, config);
         DataStream<MetricUpdate> demandStream = new DemandMetricsStreamFactory().build(clicks);

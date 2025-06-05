@@ -38,7 +38,6 @@ class RecordsTest {
               }
               """;
         OrderEvent event = objectMapper.readValue(json, OrderEvent.class);
-        System.out.println(objectMapper.writeValueAsString(event));
     }
 
     @NoArgsConstructor

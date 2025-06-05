@@ -46,7 +46,7 @@ public class EmergencyPriceAdjustmentsStreamFactory {
                     .sourceId("OrderEvents")
                     .groupId(config.get(PricingConfigOptions.KAFKA_ORDERS_GROUP_ID))
                     .messageType(OrderEvent.class)
-                    .topic(config.get(PricingConfigOptions.KAFKA_ORDERS_GROUP_ID))
+                    .topic(config.get(PricingConfigOptions.KAFKA_ORDERS_TOPIC))
                     .brokers(config.get(PricingConfigOptions.KAFKA_BOOTSTRAP_SERVERS))
                     .watermarkStrategySupplier(WatermarkStrategy::forMonotonousTimestamps)
                     .bounded(config.get(PricingConfigOptions.TEST_MODE))

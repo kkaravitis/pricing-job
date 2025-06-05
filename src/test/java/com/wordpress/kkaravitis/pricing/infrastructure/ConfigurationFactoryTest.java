@@ -70,7 +70,6 @@ class ConfigurationFactoryTest {
                       bar: "baz"
                     number: 12345
                     """;
-        System.out.println(yaml);
         Path cfgFile = tmp.resolve("config.yaml");
         Files.writeString(cfgFile, yaml);
 
