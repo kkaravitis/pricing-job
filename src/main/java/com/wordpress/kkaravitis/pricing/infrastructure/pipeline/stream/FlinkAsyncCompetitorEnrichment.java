@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
+package com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream;
 
 import com.wordpress.kkaravitis.pricing.adapters.competitor.HttpCompetitorPriceRepository;
 import com.wordpress.kkaravitis.pricing.adapters.competitor.HttpServiceClient;
@@ -55,8 +55,8 @@ public class FlinkAsyncCompetitorEnrichment
                       return new CompetitorPrice(productId, new Money(0.0, "USD"));
                   }
               })
-              .thenAccept(cp -> resultFuture.complete(
-                    Collections.singletonList(cp)
+              .thenAccept(competitorPrice -> resultFuture.complete(
+                    Collections.singletonList(competitorPrice)
               ));
     }
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
+package com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream;
 
 import com.wordpress.kkaravitis.pricing.domain.InventoryEvent;
 import com.wordpress.kkaravitis.pricing.domain.MetricType;

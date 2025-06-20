@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
+package com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream;
 
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -25,6 +25,7 @@ import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
 import com.wordpress.kkaravitis.pricing.domain.MetricType;
 import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.DemandMetricsStreamFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.CommonKafkaSource;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.CommonKafkaSource.KafkaSourceContext;
 import java.time.Instant;

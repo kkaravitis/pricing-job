@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
+package com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream;
 
 import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
@@ -33,11 +33,11 @@ public class CompetitorPriceStreamFactory {
         FlinkAsyncCompetitorEnrichment asyncEnrich = new FlinkAsyncCompetitorEnrichment(config.
               get(PricingConfigOptions.COMPETITOR_API_BASE_URL));
 
-        SingleOutputStreamOperator<String> prodIds = clicks
+        DataStream<String> productIds = clicks
               .map(ClickEvent::productId).name("ExtractProductId");
 
-        DataStream<CompetitorPrice> competitorPrices = AsyncDataStream
-              .unorderedWait(prodIds, asyncEnrich, 2000, TimeUnit.MILLISECONDS, 50)
+        SingleOutputStreamOperator<CompetitorPrice> competitorPrices = AsyncDataStream
+              .unorderedWait(productIds, asyncEnrich, 2000, TimeUnit.MILLISECONDS, 50)
               .name("AsyncCompetitorEnrichment");
 
         return competitorPrices

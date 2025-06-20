@@ -25,11 +25,11 @@ import com.wordpress.kkaravitis.pricing.domain.ClickEvent;
 import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.ConfigurationFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.CompetitorPriceStreamFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.DemandMetricsStreamFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.EmergencyPriceAdjustmentsStreamFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.InventoryStreamFactory;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PriceRuleStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.CompetitorPriceStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.DemandMetricsStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.EmergencyPriceAdjustmentsStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.InventoryStreamFactory;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.PriceRuleStreamFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.PricingEnginePipelineFactory;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.CommonKafkaSource;
 import com.wordpress.kkaravitis.pricing.infrastructure.source.CommonKafkaSource.KafkaSourceContext;
@@ -84,8 +84,8 @@ public class FlinkDynamicPricingJob {
                     .build())
                     .create(env);
 
-        DataStream<MetricUpdate> competitorStream =  new CompetitorPriceStreamFactory().build(clicks, config);
         DataStream<MetricUpdate> demandStream = new DemandMetricsStreamFactory().build(clicks);
+        DataStream<MetricUpdate> competitorStream =  new CompetitorPriceStreamFactory().build(clicks, config);
         DataStream<MetricUpdate> inventoryStream = new InventoryStreamFactory().build(env, config);
         DataStream<MetricUpdate> priceRuleStream = new PriceRuleStreamFactory().build(env, config);
         DataStream<MetricUpdate> emergencyStream = new EmergencyPriceAdjustmentsStreamFactory().build(env, config);

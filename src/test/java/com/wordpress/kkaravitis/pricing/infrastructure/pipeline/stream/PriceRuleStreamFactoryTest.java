@@ -1,4 +1,4 @@
-package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
+package com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -9,6 +9,7 @@ import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PriceRule;
 import com.wordpress.kkaravitis.pricing.domain.PriceRuleUpdate;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
+import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.PriceRuleStreamFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
