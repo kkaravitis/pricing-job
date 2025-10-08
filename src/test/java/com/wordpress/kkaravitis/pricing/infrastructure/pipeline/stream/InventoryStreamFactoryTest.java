@@ -40,9 +40,9 @@ class InventoryStreamFactoryTest {
     static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final List<InventoryEvent> inventoryEvents = List
-          .of(new InventoryEvent("p-1", 100),
-                new InventoryEvent("p-2", 200),
-                new InventoryEvent("p-3", 300));
+          .of(new InventoryEvent("p-1", "p-1",100),
+                new InventoryEvent("p-2", "p-2",200),
+                new InventoryEvent("p-3", "p-3", 300));
 
     @RegisterExtension
     static final MiniClusterExtension FLINK =

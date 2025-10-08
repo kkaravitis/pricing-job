@@ -53,10 +53,11 @@ public class DemandMetricsStreamFactory {
                         Collector<DemandMetrics> out) {
 
                       long count = StreamSupport.stream(elements.spliterator(), false).count();
+                      String productName = count > 0 ? elements.iterator().next().productName() : "";
                       double currentRate = count / 5.0; // clicks per minute
 
                       // emit with placeholder historical—will be filled later
-                      out.collect(new DemandMetrics(productId, currentRate, 0.0));
+                      out.collect(new DemandMetrics(productId, productName, currentRate, 0.0));
                   }
               });
 
@@ -72,9 +73,10 @@ public class DemandMetricsStreamFactory {
                         Iterable<ClickEvent> elements,
                         Collector<DemandMetrics> out) {
                       long count = StreamSupport.stream(elements.spliterator(), false).count();
+                      String productName = count > 0 ? elements.iterator().next().productName() : "";
                       double avgRate = count / 60.0; // clicks per minute over last hour
                       // emit with placeholder current—will be filled later
-                      out.collect(new DemandMetrics(productId, 0.0, avgRate));
+                      out.collect(new DemandMetrics(productId, productName, 0.0, avgRate));
                   }
               });
 
@@ -95,6 +97,7 @@ public class DemandMetricsStreamFactory {
                         Collector<DemandMetrics> out) {
                       out.collect(new DemandMetrics(
                             curr.productId(),
+                            curr.productName(),
                             curr.currentDemand(),
                             hist.historicalAverage()
                       ));

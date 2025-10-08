@@ -30,9 +30,13 @@ import com.wordpress.kkaravitis.pricing.domain.MetricOrClick;
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PriceRuleUpdate;
 import com.wordpress.kkaravitis.pricing.domain.PricingEngineService;
+import com.wordpress.kkaravitis.pricing.domain.PricingException;
 import com.wordpress.kkaravitis.pricing.domain.PricingResult;
+import com.wordpress.kkaravitis.pricing.domain.Product;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.Optional;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.ValueState;
@@ -122,49 +126,70 @@ public class UnifiedPricingFunction
           ReadOnlyContext ctx,
           Collector<PricingResult> out
     ) throws Exception {
+        Optional<Product> optional = resolveProduct(mc);
 
+        if(optional.isEmpty()) {
+            return;
+        }
+
+        PricingResult pr = engine.computePrice(optional.get());
+
+        sendAlertsForPriceSpikes(pr, ctx);
+
+        out.collect(pr);
+
+        lastPriceState.update(pr.newPrice());
+    }
+
+    private Optional<Product> resolveProduct(MetricOrClick mc) throws PricingException {
+        Product product = null;
         if (mc instanceof MetricOrClick.Metric m) {
             // update the appropriate repo
             switch (m.update().type()) {
                 case DEMAND  -> {
                     DemandMetrics demandMetrics = (DemandMetrics) m.update().payload();
                     demandMetricsRepository.updateMetrics(demandMetrics);
+                    product = new Product(demandMetrics.productId(), demandMetrics.productName());
                 }
                 case INVENTORY -> {
                     InventoryEvent inventoryEvent = (InventoryEvent) m.update().payload();
                     inventoryLevelRepository.updateLevel(inventoryEvent.level());
+                    product = new Product(inventoryEvent.productId(), inventoryEvent.productName());
                 }
                 case COMPETITOR -> {
                     CompetitorPrice competitorPrice = (CompetitorPrice) m.update().payload();
                     competitorPriceRepository.updatePrice(competitorPrice);
+                    product = new Product(competitorPrice.productId(), competitorPrice.productName());
                 }
                 case RULE -> {
                     PriceRuleUpdate priceRuleUpdate = (PriceRuleUpdate) m.update().payload();
                     priceRuleRepository.updateRule(priceRuleUpdate.priceRule());
+                    product = new Product(priceRuleUpdate.productId(), priceRuleUpdate.productName());
                 }
                 case EMERGENCY -> {
                     EmergencyPriceAdjustment emergencyPriceAdjustment = (EmergencyPriceAdjustment) m.update().payload();
                     emergencyAdjustmentRepository.updateAdjustment(emergencyPriceAdjustment.adjustmentFactor());
+                    product = new Product(emergencyPriceAdjustment.productId(), emergencyPriceAdjustment.productName());
                 }
             }
         } else {
             // it's a click → compute price
             ClickEvent click = ((MetricOrClick.Click) mc).event();
-            String pid = click.productId();
+            product = new Product(click.productId(), click.productName());
+        }
+        return Optional.ofNullable(product);
+    }
 
-            PricingResult pr = engine.computePrice(pid);
-
-            // alert logic
-            Money prev = lastPriceState.value();
+    private void sendAlertsForPriceSpikes(PricingResult pr,  ReadOnlyContext ctx) throws IOException {
+        // alert logic
+        Money prev = lastPriceState.value();
+        if(prev != null) {
             BigDecimal change = pr.newPrice().getAmount()
                   .subtract(prev.getAmount())
                   .divide(prev.getAmount(), RoundingMode.HALF_UP);
             if (change.compareTo(BigDecimal.valueOf(0.5)) > 0) {
                 ctx.output(PricingEnginePipelineFactory.ALERT_TAG, pr);
             }
-
-            out.collect(pr);
-            lastPriceState.update(pr.newPrice());
         }
     }
 }

@@ -58,6 +58,7 @@ class EmergencyPriceAdjustmentsStreamFactoryTest {
             orderEvents.add(new OrderEvent(
                   "order-" + i,
                   "best-seller",
+                  "best-seller",
                   5,
                   base.plusSeconds(i).toEpochMilli()));
         }

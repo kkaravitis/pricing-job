@@ -130,7 +130,7 @@ class DemandMetricsPipelineFactoryTest {
                   .forEach(ts -> {
                       try {
                           producer.send(new ProducerRecord<>(TOPIC, "producer-42",
-                                mapper.writeValueAsString(new ClickEvent("producer-42", ts))));
+                                mapper.writeValueAsString(new ClickEvent("producer-42", "p-42", ts))));
                       } catch (JsonProcessingException e) {
                           throw new RuntimeException(e);
                       }

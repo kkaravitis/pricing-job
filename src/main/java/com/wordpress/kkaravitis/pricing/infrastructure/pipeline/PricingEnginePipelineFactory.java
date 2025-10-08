@@ -91,7 +91,7 @@ public class PricingEnginePipelineFactory {
                         KafkaRecordSerializationSchema.<PricingResult>builder()
                               .setTopic(config.get(PricingConfigOptions.KAFKA_PRICING_TOPIC))
                               .setKeySerializationSchema(
-                                    result ->  result.product().productId().getBytes()
+                                    result ->  result.productId().getBytes()
                               )
                               .setValueSerializationSchema(
                                     new JsonPojoSchema<>()
@@ -105,9 +105,8 @@ public class PricingEnginePipelineFactory {
                   .build())
                   .name("PricingKafkaSink");
 
-            // alert sink: you could log, side-output to another Kafka topic, etc.
             alerts
-                  .map(alert -> "ALERT: price jump for " + alert.product().productId() +
+                  .map(alert -> "ALERT: price jump for " + alert.productId() +
                         " new=" + alert.newPrice())
                   .sinkTo(KafkaSink
                         .<String>builder()

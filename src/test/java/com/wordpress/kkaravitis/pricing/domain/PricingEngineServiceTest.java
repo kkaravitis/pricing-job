@@ -64,13 +64,14 @@ class PricingEngineServiceTest {
     void computePrice_noAdjustments_returnsWeightedAverage() throws PricingException {
         // given
         String pid = "p1";
+        String pname="product1";
 
         given(modelInferencePricePredictor.predictPrice(any()))
-              .willReturn(new Money(1.12, "USD"));
+              .willReturn(new Money(1.12, "EUR"));
         given(competitorPriceRepository.getCompetitorPrice(pid))
-              .willReturn(new CompetitorPrice(pid, new Money(1.00, "USD")));
+              .willReturn(new CompetitorPrice(pid, pid, new Money(1.00, "EUR")));
         given(demandMetricsRepository.getDemandMetrics(pid))
-              .willReturn(new DemandMetrics(pid, 5.0, 5.0));
+              .willReturn(new DemandMetrics(pid, pid,5.0, 5.0));
         given(inventoryLevelRepository.getInventoryLevel(pid))
               .willReturn(100);
         given(emergencyPriceAdjustmentRepository.getAdjustmentFactor(pid))
@@ -79,36 +80,37 @@ class PricingEngineServiceTest {
               .willReturn(PriceRule.defaults());
 
         // when
-        PricingResult result = serviceUnderTest.computePrice(pid);
+        PricingResult result = serviceUnderTest.computePrice(new Product(pid, pname));
 
         // then
-        assertEquals(new Money(1.08, "USD"), result.newPrice());
+        assertEquals(new Money(1.08, "EUR"), result.newPrice());
     }
 
     @Test
     void computePrice_demandAndInventoryAndEmergencyApplied() throws PricingException {
         //given
         String productId = "p2";
+        String productName = "p2";
         given(modelInferencePricePredictor.predictPrice(any()))
-              .willReturn(new Money(2.00, "USD"));
+              .willReturn(new Money(2.00, "EUR"));
         given(competitorPriceRepository.getCompetitorPrice(productId))
-              .willReturn(new CompetitorPrice(productId, new Money(1.00, "USD")));
+              .willReturn(new CompetitorPrice(productId, productId, new Money(1.00, "EUR")));
         given(demandMetricsRepository.getDemandMetrics(productId))
-              .willReturn(new DemandMetrics(productId, 20.0, 10.0));
+              .willReturn(new DemandMetrics(productId, productId,20.0, 10.0));
         given(inventoryLevelRepository.getInventoryLevel(productId))
               .willReturn(5);
         given(emergencyPriceAdjustmentRepository.getAdjustmentFactor(productId))
               .willReturn(1.5);
-        PriceRule rule = new PriceRule(new Money(1.00, "USD"), new Money(3.00, "USD"));
+        PriceRule rule = new PriceRule(new Money(1.00, "EUR"), new Money(3.00, "EUR"));
         given(priceRuleRepository.getPriceRule(productId))
               .willReturn(rule);
 
         // when
-        PricingResult result = serviceUnderTest.computePrice(productId);
+        PricingResult result = serviceUnderTest.computePrice(new Product(productId, productName));
 
         // then
         assertEquals(
-              new Money(2.96, "USD"),
+              new Money(2.96, "EUR"),
               result.newPrice(),
               "Should apply demand, inventory, emergency then clamp to max"
         );

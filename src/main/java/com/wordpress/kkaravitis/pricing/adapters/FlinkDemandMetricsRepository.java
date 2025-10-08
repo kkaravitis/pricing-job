@@ -63,6 +63,6 @@ public class FlinkDemandMetricsRepository implements DemandMetricsRepository, Se
                   exception);
         }
         return demandMetrics != null ? demandMetrics :
-              new DemandMetrics(productId,0.0, 0.0);
+              new DemandMetrics(productId,"",0.0, 0.0);
     }
 }

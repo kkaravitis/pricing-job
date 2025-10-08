@@ -41,9 +41,9 @@ class PriceRuleStreamFactoryTest {
     static final ObjectMapper MAPPER = new ObjectMapper();
 
     private final List<PriceRuleUpdate> priceRuleUpdates = List
-          .of(new PriceRuleUpdate("p-1", new PriceRule(new Money(10, "USD"),new Money(30, "USD"))),
-                new PriceRuleUpdate("p-2", new PriceRule(new Money(15, "USD"),new Money(40, "USD"))),
-                new PriceRuleUpdate("p-3", new PriceRule(new Money(115, "USD"),new Money(140, "USD"))));
+          .of(new PriceRuleUpdate("p-1", "p-1", new PriceRule(new Money(10, "EUR"),new Money(30, "EUR"))),
+                new PriceRuleUpdate("p-2", "p-2", new PriceRule(new Money(15, "EUR"),new Money(40, "EUR"))),
+                new PriceRuleUpdate("p-3", "p-3", new PriceRule(new Money(115, "EUR"),new Money(140, "EUR"))));
 
     @RegisterExtension
     static final MiniClusterExtension FLINK =

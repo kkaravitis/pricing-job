@@ -39,10 +39,10 @@ class MlModelAdapterTest {
         // re‐use same dummy context as above
         String pid = "p1";
         dummyCtx = new PricingContext(
-              new Product(pid),
-              new DemandMetrics(pid, 2.0, 1.0),
+              new Product(pid, pid),
+              new DemandMetrics(pid, pid,2.0, 1.0),
               3,
-              new CompetitorPrice(pid, new Money(2.0, "USD")),
+              new CompetitorPrice(pid, pid, new Money(2.0, "EUR")),
               PriceRule.defaults()
         );
     }

@@ -62,14 +62,14 @@ class FlinkDemandMetricsRepositoryTest {
         // when
         DemandMetrics demandMetrics = demandMetricsRepository.getDemandMetrics(pid);
         // then
-        assertEquals(new DemandMetrics(pid, 0, 0), demandMetrics);
+        assertEquals(new DemandMetrics(pid, "",0, 0), demandMetrics);
     }
 
     @Test
     void getDemandMetrics_whenStateNotNull_returnsStateValue() throws Exception {
         // given
         String pid = "product-123";
-        DemandMetrics stateValue = new DemandMetrics(pid, 32.0, 54.0);
+        DemandMetrics stateValue = new DemandMetrics(pid, pid,32.0, 54.0);
         given(state.value()).willReturn(stateValue);
         // when
         DemandMetrics demandMetrics = demandMetricsRepository.getDemandMetrics(pid);
@@ -82,7 +82,7 @@ class FlinkDemandMetricsRepositoryTest {
     @Test
     void updateDemandMetrics_invokeStateUpdate() throws Exception {
         // given
-        DemandMetrics demandMetrics = new DemandMetrics("product-123", 12.0, 32.0);
+        DemandMetrics demandMetrics = new DemandMetrics("product-123", "product-123",12.0, 32.0);
         // when
         demandMetricsRepository.updateMetrics(demandMetrics);
         // then
@@ -92,7 +92,7 @@ class FlinkDemandMetricsRepositoryTest {
     @Test
     void updateDemandMetrics_throwsPricingException() throws Exception {
         IOException ioException = new IOException("test IO exception");
-        DemandMetrics demandMetrics = new DemandMetrics("product-123", 12.0, 32.0);
+        DemandMetrics demandMetrics = new DemandMetrics("product-123", "product-123",12.0, 32.0);
         doThrow(ioException).when(state).update(demandMetrics);
 
         PricingException pricingException = assertThrows(PricingException.class, () -> {

@@ -21,4 +21,4 @@ import java.io.Serializable;
  * Represents a user interaction event for a specific product.
  * Used as the primary input event in the pricing pipeline.
  */
-public record ClickEvent (String productId, long timestamp) implements Serializable {}
+public record ClickEvent (String productId, String productName, long timestamp) implements Serializable {}

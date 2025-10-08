@@ -59,10 +59,10 @@ class ModelDeserializerTest {
         assertNotNull(model);
 
         PricingContext ctx = new PricingContext(
-              new Product("p-001"),
-              new DemandMetrics("p-001", 2.5, 1.0),
+              new Product("p-001", "p-001"),
+              new DemandMetrics("p-001", "p-001",2.5, 1.0),
               4,
-              new CompetitorPrice("p-001", new Money(35, "USD")),
+              new CompetitorPrice("p-001", "p-001", new Money(35, "EUR")),
               PriceRule.defaults()
         );
 
@@ -76,19 +76,19 @@ class ModelDeserializerTest {
 
         TransformedModel model1 = deserializer.deserialize(validModelZip);
         Money price1 = model1.predict(new PricingContext(
-              new Product("p-001"),
-              new DemandMetrics("p-001", 2.0, 1.0),
+              new Product("p-001", ""),
+              new DemandMetrics("p-001", "p-001",2.0, 1.0),
               10,
-              new CompetitorPrice("p-001", new Money(5.0, "USD")),
+              new CompetitorPrice("p-001", "p-001", new Money(5.0, "EUR")),
               PriceRule.defaults()
         ));
 
         TransformedModel model2 = deserializer.deserialize(validModelZip);
         Money price2 = model2.predict(new PricingContext(
-              new Product("p-001"),
-              new DemandMetrics("p-001", 2.0, 1.0),
+              new Product("p-001", ""),
+              new DemandMetrics("p-001", "p-001",2.0, 1.0),
               10,
-              new CompetitorPrice("p-001", new Money(5.0, "USD")),
+              new CompetitorPrice("p-001", "p-001", new Money(5.0, "EUR")),
               PriceRule.defaults()
         ));
 

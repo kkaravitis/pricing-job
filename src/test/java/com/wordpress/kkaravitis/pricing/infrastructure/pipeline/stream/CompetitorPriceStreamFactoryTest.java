@@ -129,7 +129,7 @@ class CompetitorPriceStreamFactoryTest {
             assertNotNull(payload);
             assertTrue(payload instanceof CompetitorPrice);
             CompetitorPrice competitorPrice = (CompetitorPrice) payload;
-            assertEquals(new Money(42.0, "USD"), competitorPrice.price());
+            assertEquals(new Money(42.0, "EUR"), competitorPrice.price());
 
         }
     }
@@ -147,6 +147,7 @@ class CompetitorPriceStreamFactoryTest {
                 producer.send(new ProducerRecord<>(TOPIC, "producer-43",
                       mapper.writeValueAsString(new ClickEvent(
                             "product-1",
+                            "p-1",
                             baseTimestamp))));
             } catch (JsonProcessingException e) {
                 throw new RuntimeException(e);

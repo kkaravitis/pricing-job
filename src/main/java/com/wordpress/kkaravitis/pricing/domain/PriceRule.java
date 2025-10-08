@@ -29,8 +29,8 @@ public record PriceRule(Money minPrice, Money maxPrice) implements Serializable 
      */
     public static PriceRule defaults() {
         return new PriceRule(
-              new Money(BigDecimal.ZERO, "USD"),
-              new Money(BigDecimal.valueOf(Double.MAX_VALUE), "USD")
+              new Money(BigDecimal.ZERO, "EUR"),
+              new Money(BigDecimal.valueOf(Double.MAX_VALUE), "EUR")
         );
     }
 

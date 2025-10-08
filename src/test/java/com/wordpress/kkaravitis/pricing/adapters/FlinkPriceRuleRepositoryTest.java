@@ -51,7 +51,7 @@ class FlinkPriceRuleRepositoryTest {
 
     @Test
     void updateRule_success() throws Exception {
-        PriceRule rule = new PriceRule(new Money(5.00, "USD"), new Money(10.00, "USD"));
+        PriceRule rule = new PriceRule(new Money(5.00, "EUR"), new Money(10.00, "EUR"));
 
         // when
         repo.updateRule(rule);
@@ -62,7 +62,7 @@ class FlinkPriceRuleRepositoryTest {
 
     @Test
     void updateRule_ioException_throwsPricingException() throws Exception {
-        PriceRule rule = new PriceRule(new Money(1.23, "USD"), new Money(4.56, "USD"));
+        PriceRule rule = new PriceRule(new Money(1.23, "EUR"), new Money(4.56, "EUR"));
         doThrow(new IOException("disk failure")).when(state).update(rule);
 
         PricingException ex = assertThrows(
@@ -78,7 +78,7 @@ class FlinkPriceRuleRepositoryTest {
 
     @Test
     void getPriceRule_valuePresent_returnsRule() throws Exception {
-        PriceRule rule = new PriceRule(new Money(2.00, "USD"), new Money(3.00, "USD"));
+        PriceRule rule = new PriceRule(new Money(2.00, "EUR"), new Money(3.00, "EUR"));
         when(state.value()).thenReturn(rule);
 
         PriceRule result = repo.getPriceRule("ignored");

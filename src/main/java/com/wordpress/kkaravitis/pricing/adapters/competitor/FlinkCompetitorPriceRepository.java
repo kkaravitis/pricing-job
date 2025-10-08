@@ -57,7 +57,7 @@ public class FlinkCompetitorPriceRepository implements CompetitorPriceRepository
     public CompetitorPrice getCompetitorPrice(String productId) throws PricingException {
         try{
             CompetitorPrice cp = state.value();
-            return cp != null ? cp : new CompetitorPrice(productId, new Money(0.0, "USD"));
+            return cp != null ? cp : new CompetitorPrice(productId, "", new Money(0.0, "EUR"));
         } catch (IOException exception) {
             throw new PricingException("Could not fetch competitor price from flink state", exception);
         }

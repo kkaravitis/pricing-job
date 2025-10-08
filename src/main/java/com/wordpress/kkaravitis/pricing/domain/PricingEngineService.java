@@ -39,13 +39,12 @@ public class PricingEngineService {
      * Calculates the final price for a given product ID.
      * @return a PricingResult containing the new price in Money
      */
-    public PricingResult computePrice(String productId) throws PricingException {
+    public PricingResult computePrice(Product product) throws PricingException {
         // 1) Gather data from ports
-        Product product    = new Product(productId);
-        DemandMetrics dm   = demandMetricsRepository.getDemandMetrics(productId);
-        int inventoryLevel = inventoryLevelRepository.getInventoryLevel(productId);
-        CompetitorPrice cp = competitorPriceRepository.getCompetitorPrice(productId);
-        PriceRule rule     = priceRuleRepository.getPriceRule(productId);
+        DemandMetrics dm   = demandMetricsRepository.getDemandMetrics(product.productId());
+        int inventoryLevel = inventoryLevelRepository.getInventoryLevel(product.productId());
+        CompetitorPrice cp = competitorPriceRepository.getCompetitorPrice(product.productId());
+        PriceRule rule     = priceRuleRepository.getPriceRule(product.productId());
 
         // fallback if no rule yet
         if (rule == null) {
@@ -75,7 +74,7 @@ public class PricingEngineService {
         }
 
         // 7) Emergency spike adjustment (e.g. flash-sale factor)
-        double emergFactor = emergencyPriceAdjustmentRepository.getAdjustmentFactor(productId);
+        double emergFactor = emergencyPriceAdjustmentRepository.getAdjustmentFactor(product.productId());
         if (emergFactor > 1.0) {
             price = price.multiply(emergFactor);
         }
@@ -88,6 +87,6 @@ public class PricingEngineService {
         }
 
         // 9) Return result
-        return new PricingResult(product, price);
+        return new PricingResult(product.productId(), product.productName(), price);
     }
 }

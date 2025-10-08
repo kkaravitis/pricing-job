@@ -42,11 +42,11 @@ public class HttpCompetitorPriceRepository implements CompetitorPriceRepository 
             String json = client.get(url);
             if (json == null) {
                 // 404 or empty → treat as zero USD
-                return new CompetitorPrice(productId, new Money(0.0, "USD"));
+                return new CompetitorPrice(productId, "", new Money(0.0, "EUR"));
             }
             JsonNode node = mapper.readTree(json);
             double price = node.get("price").asDouble();
-            return new CompetitorPrice(productId, new Money(price, "USD"));
+            return new CompetitorPrice(productId, "", new Money(price, "EUR"));
         } catch (PricingException pricingException) {
             throw pricingException;
         } catch (Exception e) {

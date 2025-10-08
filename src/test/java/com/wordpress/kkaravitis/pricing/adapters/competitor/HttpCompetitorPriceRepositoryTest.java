@@ -49,7 +49,7 @@ class HttpCompetitorPriceRepositoryTest {
         CompetitorPrice cp = repo.getCompetitorPrice(pid);
 
         assertEquals(pid, cp.productId());
-        assertEquals(new Money(42.5, "USD"), cp.price());
+        assertEquals(new Money(42.5, "EUR"), cp.price());
     }
 
     @Test

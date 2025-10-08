@@ -75,9 +75,9 @@ public class EmergencyPriceAdjustmentsStreamFactory {
                     )
                     .select((PatternSelectFunction<OrderEvent, EmergencyPriceAdjustment>) pattern -> {
                         List<OrderEvent> events = pattern.get("start");
-                        String pid = events.get(0).productId();
+                        OrderEvent orderEvent = events.get(0);
                         // e.g. increase price by 20% during flash sale
-                        return new EmergencyPriceAdjustment(pid, 1.2);
+                        return new EmergencyPriceAdjustment(orderEvent.productId(), orderEvent.productName(), 1.2);
                     });
 
 

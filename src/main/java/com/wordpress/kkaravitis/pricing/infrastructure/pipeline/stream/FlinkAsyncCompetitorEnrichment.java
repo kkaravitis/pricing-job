@@ -52,7 +52,7 @@ public class FlinkAsyncCompetitorEnrichment
                   try {
                       return competitorPriceRepository.getCompetitorPrice(productId);
                   } catch (Exception exception) {
-                      return new CompetitorPrice(productId, new Money(0.0, "USD"));
+                      return new CompetitorPrice(productId, "", new Money(0.0, "EUR"));
                   }
               })
               .thenAccept(competitorPrice -> resultFuture.complete(

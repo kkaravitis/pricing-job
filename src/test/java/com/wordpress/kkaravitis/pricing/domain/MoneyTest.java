@@ -25,10 +25,10 @@ class MoneyTest {
 
     @Test
     void constructor_scalesToTwoDecimalsHalfUp() {
-        Money m1 = new Money(new BigDecimal("1.234"), "USD");
+        Money m1 = new Money(new BigDecimal("1.234"), "EUR");
         assertEquals(new BigDecimal("1.23"), m1.getAmount());
 
-        Money m2 = new Money(new BigDecimal("1.235"), "USD");
+        Money m2 = new Money(new BigDecimal("1.235"), "EUR");
         assertEquals(new BigDecimal("1.24"), m2.getAmount());
     }
 
@@ -42,16 +42,16 @@ class MoneyTest {
 
     @Test
     void add_currencyMismatch_throws() {
-        Money a = new Money(1.00, "USD");
-        Money b = new Money(1.00, "EUR");
+        Money a = new Money(1.00, "EUR");
+        Money b = new Money(1.00, "GBP");
         assertThrows(IllegalArgumentException.class, () -> a.add(b));
     }
 
     @Test
     void multiply_roundsAtEachStep() {
         // 1.00 × 0.333 = 0.333 → rounds to 0.33
-        Money m = new Money(1.00, "USD").multiply(0.333);
-        assertEquals(new Money(0.33, "USD"), m);
+        Money m = new Money(1.00, "EUR").multiply(0.333);
+        assertEquals(new Money(0.33, "EUR"), m);
     }
 
     @Test
@@ -63,8 +63,8 @@ class MoneyTest {
 
     @Test
     void comparisons_currencyMismatch_throws() {
-        Money u = new Money(1.00, "USD");
-        Money e = new Money(1.00, "EUR");
+        Money u = new Money(1.00, "EUR");
+        Money e = new Money(1.00, "GBP");
         assertThrows(IllegalArgumentException.class, () -> u.isLessThan(e));
         assertThrows(IllegalArgumentException.class, () -> u.isGreaterThan(e));
     }

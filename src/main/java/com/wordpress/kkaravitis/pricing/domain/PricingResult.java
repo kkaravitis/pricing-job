@@ -21,6 +21,6 @@ package com.wordpress.kkaravitis.pricing.domain;
  * - newPrice: the final price to be
  * published.
  */
-public record PricingResult(Product product, Money newPrice) {
+public record PricingResult(String productId, String productName, Money newPrice) {
 
 }
