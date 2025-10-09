@@ -1,13 +1,21 @@
+/*
+ * Copyright (c) 2025 Konstantinos Karavitis
+ *
+ * Licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+ * You may not use this file for commercial purposes.
+ * See the LICENSE file in the project root or visit:
+ * https://creativecommons.org/licenses/by-nc/4.0/
+ */
 package com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import com.wordpress.kkaravitis.pricing.domain.OrderEvent;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.EmergencyPriceAdjustmentsStreamFactory;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;

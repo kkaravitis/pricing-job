@@ -1,3 +1,11 @@
+/*
+ * Copyright (c) 2025 Konstantinos Karavitis
+ *
+ * Licensed under the Creative Commons Attribution-NonCommercial 4.0 International License (CC BY-NC 4.0).
+ * You may not use this file for commercial purposes.
+ * See the LICENSE file in the project root or visit:
+ * https://creativecommons.org/licenses/by-nc/4.0/
+ */
 package com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -9,7 +17,6 @@ import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PriceRule;
 import com.wordpress.kkaravitis.pricing.domain.PriceRuleUpdate;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
-import com.wordpress.kkaravitis.pricing.infrastructure.pipeline.stream.PriceRuleStreamFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
