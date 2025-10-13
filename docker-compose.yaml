@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+
+  jobmanager:
+    hostname: jobmanager
+    build: .
+    image: pricing-job:latest
+    container_name: pricing-jobmanager
+    command:
+      - standalone-job
+      - --job-classname
+      - com.wordpress.kkaravitis.pricing.FlinkDynamicPricingJob
+      - --
+      - --configLocation
+      - /opt/pricing/config
+    ports:
+      - "8081:8081"
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        jobmanager.rpc.port: 6002
+        taskmanager.numberOfTaskSlots: 1
+        parallelism.default: 1
+        classloader.resolve-order: parent-first
+        state.backend: rocksdb
+        state.backend.incremental: true
+        restart-strategy.type: fixed-delay
+        restart-strategy.fixed-delay.attempts: 5
+        restart-strategy.fixed-delay.delay: 10 s
+        execution.checkpointing.interval: 3000
+        execution.checkpointing.mode: EXACTLY_ONCE
+        execution.checkpointing.min-pause: 500
+        execution.checkpointing.timeout: 120000
+        execution.checkpointing.max-concurrent-checkpoints: 1
+        
+
+    volumes:
+      - ./config/config.yaml:/opt/pricing/config/config.yaml
+    networks:
+      - pricing-net
+
+  taskmanager:
+    image: pricing-job:latest
+    container_name: pricing-taskmanager
+    depends_on:
+      - jobmanager
+    command: taskmanager
+    environment:
+      - |
+        FLINK_PROPERTIES=
+        jobmanager.rpc.address: jobmanager
+        jobmanager.rpc.port: 6002
+        taskmanager.numberOfTaskSlots: 1
+        parallelism.default: 1
+        classloader.resolve-order: parent-first
+        state.backend: rocksdb
+        state.backend.incremental: true
+        restart-strategy.type: fixed-delay
+        restart-strategy.fixed-delay.attempts: 5
+        restart-strategy.fixed-delay.delay: 10 s
+        execution.checkpointing.interval: 3000
+        execution.checkpointing.mode: EXACTLY_ONCE
+        execution.checkpointing.min-pause: 500
+        execution.checkpointing.timeout: 120000
+        execution.checkpointing.max-concurrent-checkpoints: 1
+    volumes:
+      - ./config/config.yaml:/opt/pricing/config/config.yaml
+    networks:
+      - pricing-net
+
+
+networks:
+  pricing-net:
+    external: true

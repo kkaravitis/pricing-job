@@ -11,5 +11,5 @@ package com.wordpress.kkaravitis.pricing.domain;
 
 import java.io.Serializable;
 
-public record InventoryEvent(String productId, String productName, int level) implements Serializable {
+public record InventoryEvent(String productId, String productName, int quantity) implements Serializable {
 }

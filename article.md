@@ -472,7 +472,7 @@ public class FlinkInventoryLevelRepository implements InventoryLevelRepository, 
 
     public void initializeState(RuntimeContext ctx) {
         ValueStateDescriptor<Integer> desc =
-            new ValueStateDescriptor<>("inventory-level", Types.INT);
+            new ValueStateDescriptor<>("inventory-quantity", Types.INT);
         this.state = ctx.getState(desc);
     }
 

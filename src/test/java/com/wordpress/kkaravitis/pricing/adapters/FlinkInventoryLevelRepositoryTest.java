@@ -62,7 +62,7 @@ class FlinkInventoryLevelRepositoryTest {
         );
 
         // then
-        assertTrue(ex.getMessage().contains("Failed to update the inventory level flink state."));
+        assertTrue(ex.getMessage().contains("Failed to update the inventory quantity flink state."));
         assertNotNull(ex.getCause());
         assertTrue(ex.getCause() instanceof IOException);
         assertEquals("disk fail", ex.getCause().getMessage());
@@ -104,7 +104,7 @@ class FlinkInventoryLevelRepositoryTest {
         );
 
         // then
-        assertTrue(ex.getMessage().contains("Failed to fetch inventory level flink state."));
+        assertTrue(ex.getMessage().contains("Failed to fetch inventory quantity flink state."));
         assertNotNull(ex.getCause());
         assertTrue(ex.getCause() instanceof IOException);
         assertEquals("fetch error", ex.getCause().getMessage());

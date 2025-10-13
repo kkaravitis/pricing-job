@@ -9,6 +9,8 @@
 
 package com.wordpress.kkaravitis.pricing.domain;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +37,7 @@ public class PricingEngineService {
      */
     public PricingResult computePrice(Product product) throws PricingException {
         // 1) Gather data from ports
-        DemandMetrics dm   = demandMetricsRepository.getDemandMetrics(product.productId());
+        DemandMetrics demandMetrics   = demandMetricsRepository.getDemandMetrics(product.productId());
         int inventoryLevel = inventoryLevelRepository.getInventoryLevel(product.productId());
         CompetitorPrice cp = competitorPriceRepository.getCompetitorPrice(product.productId());
         PriceRule rule     = priceRuleRepository.getPriceRule(product.productId());
@@ -47,7 +49,7 @@ public class PricingEngineService {
 
         // 2) Build a context for ML inference
         PricingContext ctx = new PricingContext(
-              product, dm, inventoryLevel, cp, rule
+              product, demandMetrics, inventoryLevel, cp, rule
         );
 
         // 3) ML base price
@@ -58,7 +60,7 @@ public class PricingEngineService {
               .add(cp.price().multiply(0.3));
 
         // 5) Demand adjustment
-        if (dm.currentDemand() > dm.historicalAverage()) {
+        if (demandMetrics.currentDemand() > demandMetrics.historicalAverage()) {
             price = price.multiply(1.05);
         }
 
@@ -81,6 +83,10 @@ public class PricingEngineService {
         }
 
         // 9) Return result
-        return new PricingResult(product.productId(), product.productName(), price);
+        return new PricingResult(
+              product.productId(),
+              product.productName(),
+              price,
+              Instant.now().toEpochMilli());
     }
 }

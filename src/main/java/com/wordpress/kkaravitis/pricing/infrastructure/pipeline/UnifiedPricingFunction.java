@@ -147,7 +147,7 @@ public class UnifiedPricingFunction
                 }
                 case INVENTORY -> {
                     InventoryEvent inventoryEvent = (InventoryEvent) m.update().payload();
-                    inventoryLevelRepository.updateLevel(inventoryEvent.level());
+                    inventoryLevelRepository.updateLevel(inventoryEvent.quantity());
                     product = new Product(inventoryEvent.productId(), inventoryEvent.productName());
                 }
                 case COMPETITOR -> {

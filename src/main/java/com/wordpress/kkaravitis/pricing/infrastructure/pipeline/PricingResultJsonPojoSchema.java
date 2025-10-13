@@ -9,28 +9,23 @@
 
 package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wordpress.kkaravitis.pricing.domain.PricingRuntimeException;
+import com.wordpress.kkaravitis.pricing.domain.PricingResult;
 import lombok.NoArgsConstructor;
 import org.apache.flink.api.common.serialization.SerializationSchema;
+import org.apache.flink.api.common.typeinfo.TypeInformation;
 
 @NoArgsConstructor
-public class JsonPojoSchema<T> implements SerializationSchema<T> {
-
-    private transient ObjectMapper mapper;
-
-    @Override
-    public void open(InitializationContext context) {
-        this.mapper = new ObjectMapper();
-    }
+public final class PricingResultJsonPojoSchema implements SerializationSchema<PricingResult> {
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Override
-    public byte[] serialize(T element) {
+    public byte[] serialize(PricingResult element) {
         try {
-            return mapper.writeValueAsBytes(element);
-        } catch (JsonProcessingException e) {
-            throw new PricingRuntimeException("Failed to JSON-serialize element: " + element, e);
+            return MAPPER.writeValueAsBytes(element);
+        } catch (Exception exception) {
+            throw new RuntimeException("Failed to serialize " +
+                  PricingResult.class.getSimpleName(), exception);
         }
     }
 }

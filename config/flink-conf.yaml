@@ -1,0 +1,31 @@
+# --- Core addresses/ports ---
+jobmanager.rpc.address: jobmanager
+jobmanager.rpc.port: 6002
+classloader.resolve-order: parent-first
+
+# --- Memory budgets ---
+jobmanager.memory.process.size: 512m
+
+taskmanager.numberOfTaskSlots: 1
+parallelism.default: 1
+
+#taskmanager.memory.process.size: 1024 mb
+#taskmanager.memory.network.min: 64 mb
+#taskmanager.memory.network.max: 64 mb
+#taskmanager.memory.managed.size: 128 mb
+taskmanager.memory.flink.size: 768 mb
+
+# --- State backend ---
+state.backend: rocksdb
+state.backend.incremental: true
+
+# --- Restart strategy (new key name) ---
+restart-strategy.type: fixed-delay
+restart-strategy.fixed-delay.attempts: 5
+restart-strategy.fixed-delay.delay: 10 s
+
+execution.checkpointing.interval: 3000
+execution.checkpointing.mode: EXACTLY_ONCE
+execution.checkpointing.min-pause: 500
+execution.checkpointing.timeout: 120000
+execution.checkpointing.max-concurrent-checkpoints: 1

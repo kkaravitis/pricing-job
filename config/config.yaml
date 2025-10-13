@@ -13,7 +13,7 @@
 # limitations under the License.
 
 kafka:
-  bootstrap.servers: "localhost:9092"
+  bootstrap.servers: "kafka:19092"
 
   click:
     topic: "click-event"

@@ -40,7 +40,7 @@ public class KafkaModelBroadcastSource {
               .setBootstrapServers(context.brokers)
               .setTopics(context.topic)
               .setGroupId(context.groupId)
-              .setStartingOffsets(OffsetsInitializer.latest())
+              .setStartingOffsets(OffsetsInitializer.earliest())
               // Use Flink's ByteArrayDeserializationSchema
               .setValueOnlyDeserializer(new RawByteDeserializationSchema())
               .build();

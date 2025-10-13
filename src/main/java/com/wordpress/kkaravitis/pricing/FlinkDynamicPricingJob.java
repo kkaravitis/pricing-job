@@ -49,7 +49,6 @@ public class FlinkDynamicPricingJob {
 
     public static void main(String[] args) throws Exception {
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setParallelism(4);
         ParameterTool params = ParameterTool.fromArgs(args);
         Configuration config = new ConfigurationFactory().build(params);
 

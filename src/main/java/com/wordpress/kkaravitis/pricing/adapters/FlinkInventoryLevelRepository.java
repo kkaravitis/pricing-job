@@ -27,7 +27,7 @@ public class FlinkInventoryLevelRepository implements InventoryLevelRepository, 
 
     public void initializeState(RuntimeContext ctx) {
         ValueStateDescriptor<Integer> desc =
-              new ValueStateDescriptor<>("inventory-level", Types.INT);
+              new ValueStateDescriptor<>("inventory-quantity", Types.INT);
         this.state = ctx.getState(desc);
     }
 
@@ -35,7 +35,7 @@ public class FlinkInventoryLevelRepository implements InventoryLevelRepository, 
         try {
             state.update(level);
         } catch (IOException e) {
-            throw new PricingException("Failed to update the inventory level flink state.", e);
+            throw new PricingException("Failed to update the inventory quantity flink state.", e);
         }
     }
 
@@ -45,7 +45,7 @@ public class FlinkInventoryLevelRepository implements InventoryLevelRepository, 
         try {
             value = state.value();
         } catch (IOException e) {
-            throw new PricingException("Failed to fetch inventory level flink state.", e);
+            throw new PricingException("Failed to fetch inventory quantity flink state.", e);
         }
         return value == null ? 0 : value;
     }
