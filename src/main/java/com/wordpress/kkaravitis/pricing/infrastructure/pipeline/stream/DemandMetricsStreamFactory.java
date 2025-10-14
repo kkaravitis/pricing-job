@@ -26,7 +26,7 @@ import org.apache.flink.util.Collector;
 public class DemandMetricsStreamFactory {
 
     public DataStream<MetricUpdate> build(DataStream<ClickEvent> clicks) {
-        // 1) Add timestamps & watermarks
+
         DataStream<ClickEvent> clicksWithTs = clicks
               .assignTimestampsAndWatermarks(
                     WatermarkStrategy
@@ -34,7 +34,7 @@ public class DemandMetricsStreamFactory {
                           .withTimestampAssigner((evt, ts) -> evt.timestamp())
               );
 
-        // 2) Compute current demand (5‑min sliding window, slide 1 min)
+
         SingleOutputStreamOperator<DemandMetrics> shortWindow = clicksWithTs
               .keyBy(ClickEvent::productId)
               .window(SlidingEventTimeWindows.of(Duration.ofMinutes(5), Duration.ofMinutes(1)))
@@ -50,12 +50,10 @@ public class DemandMetricsStreamFactory {
                       String productName = count > 0 ? elements.iterator().next().productName() : "";
                       double currentRate = count / 5.0; // clicks per minute
 
-                      // emit with placeholder historical—will be filled later
                       out.collect(new DemandMetrics(productId, productName, currentRate, 0.0));
                   }
               });
 
-        // 3) Compute historical average (1‑hour sliding window, slide 5 min)
         SingleOutputStreamOperator<DemandMetrics> longWindow = clicksWithTs
               .keyBy(ClickEvent::productId)
               .window(SlidingEventTimeWindows.of(Duration.ofHours(1), Duration.ofMinutes(5)))
@@ -68,15 +66,11 @@ public class DemandMetricsStreamFactory {
                         Collector<DemandMetrics> out) {
                       long count = StreamSupport.stream(elements.spliterator(), false).count();
                       String productName = count > 0 ? elements.iterator().next().productName() : "";
-                      double avgRate = count / 60.0; // clicks per minute over last hour
-                      // emit with placeholder current—will be filled later
+                      double avgRate = count / 60.0;
+
                       out.collect(new DemandMetrics(productId, productName, 0.0, avgRate));
                   }
               });
-
-        // 4) Join the two streams by productId and window alignment
-        //    We’ll use a simple interval join on event time, matching each shortWindow record
-        //    with the latest longWindow record within ±2.5 minutes of its window end.
 
         DataStream<DemandMetrics> demandMetricsStream = shortWindow
               .keyBy(DemandMetrics::productId)

@@ -49,7 +49,7 @@ public class EmergencyPriceAdjustmentsStreamFactory {
 
         DataStream<OrderEvent> orderEvents = ordersKafkaSource.create(env);
 
-        // 2) Define a CEP pattern: ten or more events in 1 minute
+
         Pattern<OrderEvent, ?> flashSalePattern = Pattern.<OrderEvent>begin("start")
               .where(new SimpleCondition<>() {
                   @Override
@@ -61,7 +61,7 @@ public class EmergencyPriceAdjustmentsStreamFactory {
               .consecutive()                       // back‐to‐back
               .within(Duration.ofMinutes(1));      // within one minute
 
-        // 3) Apply pattern keyed by productId
+
         SingleOutputStreamOperator<EmergencyPriceAdjustment> adjustments =
               CEP.pattern(
                           orderEvents.keyBy(OrderEvent::productId),

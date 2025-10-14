@@ -138,12 +138,10 @@ public class UnifiedPricingFunction
     private Optional<Product> resolveProduct(MetricOrClick mc) throws PricingException {
         Product product = null;
         if (mc instanceof MetricOrClick.Metric m) {
-            // update the appropriate repo
             switch (m.update().type()) {
                 case DEMAND  -> {
                     DemandMetrics demandMetrics = (DemandMetrics) m.update().payload();
                     demandMetricsRepository.updateMetrics(demandMetrics);
-                    product = new Product(demandMetrics.productId(), demandMetrics.productName());
                 }
                 case INVENTORY -> {
                     InventoryEvent inventoryEvent = (InventoryEvent) m.update().payload();
@@ -153,7 +151,6 @@ public class UnifiedPricingFunction
                 case COMPETITOR -> {
                     CompetitorPrice competitorPrice = (CompetitorPrice) m.update().payload();
                     competitorPriceRepository.updatePrice(competitorPrice);
-                    product = new Product(competitorPrice.productId(), competitorPrice.productName());
                 }
                 case RULE -> {
                     PriceRuleUpdate priceRuleUpdate = (PriceRuleUpdate) m.update().payload();
@@ -167,7 +164,6 @@ public class UnifiedPricingFunction
                 }
             }
         } else {
-            // it's a click → compute price
             ClickEvent click = ((MetricOrClick.Click) mc).event();
             product = new Product(click.productId(), click.productName());
         }
@@ -175,7 +171,6 @@ public class UnifiedPricingFunction
     }
 
     private void sendAlertsForPriceSpikes(PricingResult pr,  ReadOnlyContext ctx) throws IOException {
-        // alert logic
         Money prev = lastPriceState.value();
         if(prev != null) {
             BigDecimal change = pr.newPrice().getAmount()
