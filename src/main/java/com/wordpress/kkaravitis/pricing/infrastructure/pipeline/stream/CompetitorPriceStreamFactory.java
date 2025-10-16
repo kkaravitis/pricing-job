@@ -15,11 +15,13 @@ import com.wordpress.kkaravitis.pricing.domain.MetricType;
 import com.wordpress.kkaravitis.pricing.domain.MetricUpdate;
 import com.wordpress.kkaravitis.pricing.infrastructure.config.PricingConfigOptions;
 import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.configuration.Configuration;
 import org.apache.flink.streaming.api.datastream.AsyncDataStream;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.datastream.SingleOutputStreamOperator;
 
+@Slf4j
 public class CompetitorPriceStreamFactory {
 
     public DataStream<MetricUpdate> build (DataStream<ClickEvent> clicks, Configuration config) {
@@ -35,7 +37,12 @@ public class CompetitorPriceStreamFactory {
               .name("AsyncCompetitorEnrichment");
 
         return competitorPrices
-              .map(c -> new MetricUpdate(c.productId(), MetricType.COMPETITOR, c))
+              .map(c -> {
+                  log.info("[COMPETITOR] competitor price that will be transformed to metric update is {}", c);
+                  MetricUpdate metricUpdate = new MetricUpdate(c.productId(), MetricType.COMPETITOR, c);
+                  log.info("[COMPETITOR] metric update is {}", metricUpdate);
+                  return  metricUpdate;
+              })
              .name("UpdateCompetitorState");
     }
 

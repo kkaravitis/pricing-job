@@ -31,6 +31,7 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.Optional;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.functions.RuntimeContext;
 import org.apache.flink.api.common.state.ValueState;
@@ -44,6 +45,7 @@ import org.apache.flink.util.Collector;
  *   • updates Flink-backed repositories on metric updates
  *   • on clicks, pulls all repos + model → invokes PricingEngineService
  */
+@Slf4j
 public class UnifiedPricingFunction
       extends KeyedBroadcastProcessFunction<
             String,              // key = productId
@@ -136,8 +138,10 @@ public class UnifiedPricingFunction
     }
 
     private Optional<Product> resolveProduct(MetricOrClick mc) throws PricingException {
+        log.info("[UNIFIED-FUN] executed");
         Product product = null;
         if (mc instanceof MetricOrClick.Metric m) {
+
             switch (m.update().type()) {
                 case DEMAND  -> {
                     DemandMetrics demandMetrics = (DemandMetrics) m.update().payload();
@@ -149,7 +153,9 @@ public class UnifiedPricingFunction
                     product = new Product(inventoryEvent.productId(), inventoryEvent.productName());
                 }
                 case COMPETITOR -> {
+                    log.info("[UNIFIED-FUN] COMPETITOR");
                     CompetitorPrice competitorPrice = (CompetitorPrice) m.update().payload();
+                    log.info("[UNIFIED-FUN] COMPETITOR {}", competitorPrice);
                     competitorPriceRepository.updatePrice(competitorPrice);
                 }
                 case RULE -> {

@@ -10,9 +10,10 @@
 package com.wordpress.kkaravitis.pricing.domain;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 
 /**
  * The core application service orchestrating the pricing algorithm:
@@ -21,6 +22,7 @@ import lombok.RequiredArgsConstructor;
  * 3) Blends and adjusts prices based on competitor data and inventory.
  * 4) Enforces business min/max price rules.
  */
+@Slf4j
 @Getter
 @RequiredArgsConstructor
 public class PricingEngineService {
@@ -42,6 +44,12 @@ public class PricingEngineService {
         CompetitorPrice cp = competitorPriceRepository.getCompetitorPrice(product.productId());
         PriceRule rule     = priceRuleRepository.getPriceRule(product.productId());
 
+        log.info("[PRICING] Product id = {}", product.productId());
+        log.info("[PRICING] Product name = {}", product.productName());
+        log.info("[PRICING] demand = {}", demandMetrics.currentDemand());
+        log.info("[PRICING] inventory = {}", inventoryLevel);
+        log.info("[PRICING] competitor price = {}", cp);
+
         // fallback if no rule yet
         if (rule == null) {
             rule = PriceRule.defaults();
@@ -54,6 +62,7 @@ public class PricingEngineService {
 
         // 3) ML base price
         Money mlPrice = modelInferencePricePredictor.predictPrice(ctx);
+        log.info("[PRICING] ML prediction = {}", mlPrice);
 
         // 4) Blend competitor (70/30)
         Money price = mlPrice.multiply(0.7)

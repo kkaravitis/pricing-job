@@ -16,6 +16,7 @@ import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import java.util.Collections;
 import java.util.concurrent.CompletableFuture;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.streaming.api.functions.async.ResultFuture;
 import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
@@ -23,6 +24,7 @@ import org.apache.flink.streaming.api.functions.async.RichAsyncFunction;
 /**
  * Wraps a CompetitorPriceProvider in a non-blocking Flink AsyncFunction.
  */
+@Slf4j
 public class FlinkAsyncCompetitorEnrichment
       extends RichAsyncFunction<String, CompetitorPrice> {
 
@@ -44,8 +46,11 @@ public class FlinkAsyncCompetitorEnrichment
         CompletableFuture
               .supplyAsync(() -> {
                   try {
-                      return competitorPriceRepository.getCompetitorPrice(productId);
+                      CompetitorPrice competitorPrice = competitorPriceRepository.getCompetitorPrice(productId);
+                      log.info("[COMPETITOR] got from competitor site: {}", competitorPrice);
+                      return competitorPrice;
                   } catch (Exception exception) {
+                      log.error("Failed to retrieve competitor's price", exception);
                       return new CompetitorPrice(productId, "", new Money(0.0, "EUR"));
                   }
               })

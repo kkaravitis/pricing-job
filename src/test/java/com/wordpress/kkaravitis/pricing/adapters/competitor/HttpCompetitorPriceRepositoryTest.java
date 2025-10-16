@@ -31,7 +31,7 @@ class HttpCompetitorPriceRepositoryTest {
 
     @BeforeEach
     void setUp() {
-        repo = new HttpCompetitorPriceRepository(client, "http://api.example.com");
+        repo = new HttpCompetitorPriceRepository(client, "http://api.example.com/price");
     }
 
     @Test

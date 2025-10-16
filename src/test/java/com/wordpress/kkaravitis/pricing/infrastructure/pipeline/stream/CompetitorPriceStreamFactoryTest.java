@@ -83,7 +83,7 @@ class CompetitorPriceStreamFactoryTest {
         config.set(PricingConfigOptions.COMPETITOR_API_BASE_URL, baseUrl);
 
         try (var mockServer = new MockServerClient(host, port)) {
-            mockServer.when(HttpRequest.request().withPath("/price/product-1"))
+            mockServer.when(HttpRequest.request().withPath("/product-1"))
               .respond(HttpResponse.response()
                     .withStatusCode(200)
                     .withBody("""

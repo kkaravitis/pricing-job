@@ -15,10 +15,12 @@ import com.wordpress.kkaravitis.pricing.domain.CompetitorPrice;
 import com.wordpress.kkaravitis.pricing.domain.CompetitorPriceRepository;
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PricingException;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Adapter: implements the domain CompetitorPriceProvider by fetching JSON price data over HTTP.
  */
+@Slf4j
 public class HttpCompetitorPriceRepository implements CompetitorPriceRepository {
     private final transient HttpServiceClient client;
     private final String baseUrl;
@@ -32,8 +34,9 @@ public class HttpCompetitorPriceRepository implements CompetitorPriceRepository 
     @Override
     public CompetitorPrice getCompetitorPrice(String productId) throws PricingException {
         try {
-            String url = String.format("%s/price/%s", baseUrl, productId);
+            String url = String.format("%s/%s", baseUrl, productId);
             String json = client.get(url);
+            log.info("[HttpCompetitorPriceRepository] Competitor response {}", json);
             if (json == null) {
                 // 404 or empty → treat as zero USD
                 return new CompetitorPrice(productId, "", new Money(0.0, "EUR"));

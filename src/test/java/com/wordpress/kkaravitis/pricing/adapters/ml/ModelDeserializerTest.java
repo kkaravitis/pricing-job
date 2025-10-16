@@ -53,14 +53,15 @@ class ModelDeserializerTest {
         assertNotNull(model);
 
         PricingContext ctx = new PricingContext(
-              new Product("p-001", "p-001"),
-              new DemandMetrics("p-001", "p-001",2.5, 1.0),
-              4,
-              new CompetitorPrice("p-001", "p-001", new Money(35, "EUR")),
+              new Product("iphone-15-pro", "iphone-15-pro"),
+              new DemandMetrics("iphone-15-pro", "iphone-15-pro",60, 60),
+              50,
+              new CompetitorPrice("iphone-15-pro", "iphone-15-pro", new Money(1100, "EUR")),
               PriceRule.defaults()
         );
 
         Money price = model.predict(ctx);
+        System.out.println(price);
         assertTrue(price.getAmount().compareTo(BigDecimal.ZERO) > 0);
     }
 
