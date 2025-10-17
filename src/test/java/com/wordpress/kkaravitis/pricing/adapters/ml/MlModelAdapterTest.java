@@ -17,6 +17,7 @@ import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PriceRule;
 import com.wordpress.kkaravitis.pricing.domain.PricingContext;
+import com.wordpress.kkaravitis.pricing.domain.PricingException;
 import com.wordpress.kkaravitis.pricing.domain.Product;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -42,9 +43,9 @@ class MlModelAdapterTest {
     }
 
     @Test
-    void predict_beforeUpdate_throwsIllegalState() {
-        IllegalStateException ex = assertThrows(
-              IllegalStateException.class,
+    void predict_beforeUpdate_throwsPricingException() {
+        PricingException ex = assertThrows(
+              PricingException.class,
               () -> adapter.predictPrice(dummyCtx)
         );
         assertTrue(ex.getMessage().contains("Model bytes not initialized"));

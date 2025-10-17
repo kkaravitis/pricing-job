@@ -46,9 +46,7 @@ public class FlinkAsyncCompetitorEnrichment
         CompletableFuture
               .supplyAsync(() -> {
                   try {
-                      CompetitorPrice competitorPrice = competitorPriceRepository.getCompetitorPrice(productId);
-                      log.info("[COMPETITOR] got from competitor site: {}", competitorPrice);
-                      return competitorPrice;
+                      return competitorPriceRepository.getCompetitorPrice(productId);
                   } catch (Exception exception) {
                       log.error("Failed to retrieve competitor's price", exception);
                       return new CompetitorPrice(productId, "", new Money(0.0, "EUR"));

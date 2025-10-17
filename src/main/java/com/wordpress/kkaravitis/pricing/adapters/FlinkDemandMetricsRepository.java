@@ -59,4 +59,10 @@ public class FlinkDemandMetricsRepository implements DemandMetricsRepository, Se
         return demandMetrics != null ? demandMetrics :
               new DemandMetrics(productId,"",0.0, 0.0);
     }
+
+    public void clear() {
+        state.clear();
+    }
+
+
 }

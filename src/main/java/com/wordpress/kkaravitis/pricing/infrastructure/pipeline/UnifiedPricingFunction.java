@@ -21,10 +21,10 @@ import com.wordpress.kkaravitis.pricing.domain.DemandMetrics;
 import com.wordpress.kkaravitis.pricing.domain.EmergencyPriceAdjustment;
 import com.wordpress.kkaravitis.pricing.domain.InventoryEvent;
 import com.wordpress.kkaravitis.pricing.domain.MetricOrClick;
+import com.wordpress.kkaravitis.pricing.domain.MetricOrClick.Click;
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PriceRuleUpdate;
 import com.wordpress.kkaravitis.pricing.domain.PricingEngineService;
-import com.wordpress.kkaravitis.pricing.domain.PricingException;
 import com.wordpress.kkaravitis.pricing.domain.PricingResult;
 import com.wordpress.kkaravitis.pricing.domain.Product;
 import java.io.IOException;
@@ -54,6 +54,8 @@ public class UnifiedPricingFunction
             PricingResult>       // output
 {
 
+    private static final long FIVE_MINUTES_MS = 5L * 60L * 1000L;
+
     private transient MlModelAdapter mlModelAdapter;
     private transient FlinkDemandMetricsRepository demandMetricsRepository;
     private transient FlinkInventoryLevelRepository inventoryLevelRepository;
@@ -63,6 +65,12 @@ public class UnifiedPricingFunction
 
     // for alerts
     private transient ValueState<Money> lastPriceState;
+
+    // for timers
+    private transient ValueState<Long> inactivityTimerState;
+
+    // For keeping the product name
+    private transient ValueState<String> productNameState;
 
     // core DDD service
     private transient PricingEngineService engine;
@@ -94,6 +102,12 @@ public class UnifiedPricingFunction
               new ValueStateDescriptor<>("lastPrice", Money.class)
         );
 
+        inactivityTimerState = runtimeContext.getState(
+              new ValueStateDescriptor<>("inactivityTimer", Long.class));
+
+        productNameState = runtimeContext.getState(
+              new ValueStateDescriptor<>("productName", String.class));
+
         // pricing service depends only on repository interfaces + adapter
         engine = new PricingEngineService(
               demandMetricsRepository,
@@ -122,13 +136,17 @@ public class UnifiedPricingFunction
           ReadOnlyContext ctx,
           Collector<PricingResult> out
     ) throws Exception {
-        Optional<Product> optional = resolveProduct(mc);
-
+        Optional<Product> optional = resolveProduct(mc, ctx);
         if(optional.isEmpty()) {
             return;
         }
 
+        handleInactivity(mc, ctx);
+
         PricingResult pr = engine.computePrice(optional.get());
+        if(pr == null) {
+            return;
+        }
 
         sendAlertsForPriceSpikes(pr, ctx);
 
@@ -137,7 +155,28 @@ public class UnifiedPricingFunction
         lastPriceState.update(pr.newPrice());
     }
 
-    private Optional<Product> resolveProduct(MetricOrClick mc) throws PricingException {
+
+    @Override
+    public void onTimer(long timestamp, KeyedBroadcastProcessFunction<String, MetricOrClick, byte[], PricingResult>.OnTimerContext ctx,
+          Collector<PricingResult> out) throws Exception {
+        Long currentInactivityTimer = inactivityTimerState.value();
+        if (currentInactivityTimer == null || !currentInactivityTimer.equals(timestamp)) {
+            return;
+        }
+        String productId = ctx.getCurrentKey();
+        String productName = productNameState.value();
+        demandMetricsRepository.clear();
+        inactivityTimerState.clear();
+        productNameState.clear();
+
+        PricingResult pricingResult = engine.computePrice(new Product(productId, productName));
+        if(pricingResult != null) {
+            out.collect(pricingResult);
+            lastPriceState.update(pricingResult.newPrice());
+        }
+    }
+
+    private Optional<Product> resolveProduct(MetricOrClick mc, ReadOnlyContext ctx) throws Exception {
         log.info("[UNIFIED-FUN] executed");
         Product product = null;
         if (mc instanceof MetricOrClick.Metric m) {
@@ -153,9 +192,7 @@ public class UnifiedPricingFunction
                     product = new Product(inventoryEvent.productId(), inventoryEvent.productName());
                 }
                 case COMPETITOR -> {
-                    log.info("[UNIFIED-FUN] COMPETITOR");
                     CompetitorPrice competitorPrice = (CompetitorPrice) m.update().payload();
-                    log.info("[UNIFIED-FUN] COMPETITOR {}", competitorPrice);
                     competitorPriceRepository.updatePrice(competitorPrice);
                 }
                 case RULE -> {
@@ -178,7 +215,7 @@ public class UnifiedPricingFunction
 
     private void sendAlertsForPriceSpikes(PricingResult pr,  ReadOnlyContext ctx) throws IOException {
         Money prev = lastPriceState.value();
-        if(prev != null) {
+        if(prev != null && prev.getAmount().compareTo(BigDecimal.ZERO) != 0) {
             BigDecimal change = pr.newPrice().getAmount()
                   .subtract(prev.getAmount())
                   .divide(prev.getAmount(), RoundingMode.HALF_UP);
@@ -186,5 +223,21 @@ public class UnifiedPricingFunction
                 ctx.output(PricingEnginePipelineFactory.ALERT_TAG, pr);
             }
         }
+    }
+
+    private void handleInactivity(MetricOrClick mc, ReadOnlyContext ctx) throws IOException {
+        if (!(mc instanceof Click)) {
+            return;
+        }
+        Click click = (Click) mc;
+        productNameState.update(click.event().productName());
+        Long previousInactivityTimer = inactivityTimerState.value();
+        if (previousInactivityTimer != null) {
+            ctx.timerService().deleteProcessingTimeTimer(previousInactivityTimer);
+        }
+        long now = ctx.timerService().currentProcessingTime();
+        long fireAt = now + FIVE_MINUTES_MS;
+        ctx.timerService().registerProcessingTimeTimer(fireAt);
+        inactivityTimerState.update(fireAt);
     }
 }

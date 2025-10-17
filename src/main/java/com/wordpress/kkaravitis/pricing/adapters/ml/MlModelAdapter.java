@@ -12,6 +12,7 @@ package com.wordpress.kkaravitis.pricing.adapters.ml;
 import com.wordpress.kkaravitis.pricing.domain.ModelInferencePricePredictor;
 import com.wordpress.kkaravitis.pricing.domain.Money;
 import com.wordpress.kkaravitis.pricing.domain.PricingContext;
+import com.wordpress.kkaravitis.pricing.domain.PricingException;
 import java.io.Serial;
 import java.io.Serializable;
 import lombok.NoArgsConstructor;
@@ -42,10 +43,10 @@ public class MlModelAdapter implements ModelInferencePricePredictor, Serializabl
     }
 
     @Override
-    public Money predictPrice(PricingContext context) {
+    public Money predictPrice(PricingContext context) throws PricingException {
         if (model == null) {
             if (modelBytes == null) {
-                throw new IllegalStateException("Model bytes not initialized");
+                throw new PricingException("Model bytes not initialized");
             }
             model = modelDeserializer.deserialize(modelBytes);
         }
