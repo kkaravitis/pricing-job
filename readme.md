@@ -53,3 +53,29 @@ This implementation uses **Apache Flink 2.0.0** to deliver a scalable, fault‑t
    - Publish updated prices to a Kafka sink with **exactly‑once semantics**.
    - Emit **alerts** (side‑outputs) for significant price changes (e.g., >50% deviation).
 ---
+
+## Build and run
+
+```bash
+mvn clean install
+docker build . -t pricing-job
+```
+
+In order to run through docker-compose you should have started the docker-compose of
+https://github.com/kkaravitis/pricing-api first
+
+So, if you have not done it already, create the docker network pricing-net
+```bash
+docker network create pricing-net
+```
+and then navigate to https://github.com/kkaravitis/pricing-api project and run 
+```bash
+docker-compose up -d
+```
+
+After that you can run the docker-compose in this project by running
+```bash
+docker-compose up -d
+```
+
+
