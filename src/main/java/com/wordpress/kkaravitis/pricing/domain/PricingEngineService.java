@@ -89,7 +89,12 @@ public class PricingEngineService {
             }
 
             // 9) Return result
-            return new PricingResult(product.productId(), product.productName(), price, Instant.now().toEpochMilli(), inventoryLevel,
+            return new PricingResult(product.productId(),
+                  product.productName(),
+                  price,
+                  mlPrice,
+                  Instant.now().toEpochMilli(),
+                  inventoryLevel,
                   demandMetrics.currentDemand());
         } catch (PricingException pricingException) {
             log.error("System Error", pricingException);

@@ -15,6 +15,7 @@ package com.wordpress.kkaravitis.pricing.domain;
 public record PricingResult(String productId,
                             String productName,
                             Money newPrice,
+                            Money modelPrediction,
                             Long timestamp,
                             Integer inventoryLevel,
                             Double currentDemand
