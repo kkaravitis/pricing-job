@@ -9,6 +9,8 @@
 
 package com.wordpress.kkaravitis.pricing.infrastructure.pipeline;
 
+import static com.wordpress.kkaravitis.pricing.infrastructure.source.KafkaModelBroadcastSource.MODEL_DESCRIPTOR;
+
 import com.wordpress.kkaravitis.pricing.adapters.FlinkDemandMetricsRepository;
 import com.wordpress.kkaravitis.pricing.adapters.FlinkEmergencyAdjustmentRepository;
 import com.wordpress.kkaravitis.pricing.adapters.FlinkInventoryLevelRepository;
@@ -34,6 +36,8 @@ import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.functions.OpenContext;
 import org.apache.flink.api.common.functions.RuntimeContext;
+import org.apache.flink.api.common.state.BroadcastState;
+import org.apache.flink.api.common.state.ReadOnlyBroadcastState;
 import org.apache.flink.api.common.state.ValueState;
 import org.apache.flink.api.common.state.ValueStateDescriptor;
 import org.apache.flink.streaming.api.functions.co.KeyedBroadcastProcessFunction;
@@ -77,7 +81,6 @@ public class UnifiedPricingFunction
 
     @Override
     public void open(OpenContext ctx) {
-
         mlModelAdapter = new MlModelAdapter();
         mlModelAdapter.initialize();
 
@@ -125,7 +128,9 @@ public class UnifiedPricingFunction
           byte[] bytes,
           Context ctx,
           Collector<PricingResult> out
-    ) {
+    ) throws Exception {
+        BroadcastState<String, byte[]> modelState = ctx.getBroadcastState(MODEL_DESCRIPTOR);
+        modelState.put("latest", bytes);
         mlModelAdapter.updateModelBytes(bytes);
     }
 
@@ -136,6 +141,9 @@ public class UnifiedPricingFunction
           ReadOnlyContext ctx,
           Collector<PricingResult> out
     ) throws Exception {
+
+        recoverModelBytes(ctx);
+
         Optional<Product> optional = resolveProduct(mc, ctx);
         if(optional.isEmpty()) {
             return;
@@ -239,5 +247,17 @@ public class UnifiedPricingFunction
         long fireAt = now + FIVE_MINUTES_MS;
         ctx.timerService().registerProcessingTimeTimer(fireAt);
         inactivityTimerState.update(fireAt);
+    }
+
+    private void recoverModelBytes(ReadOnlyContext ctx) throws Exception {
+        if (mlModelAdapter.hasModelBytes()) {
+            return;
+        }
+        ReadOnlyBroadcastState<String, byte[]> ro = ctx.getBroadcastState(MODEL_DESCRIPTOR);
+        byte[] last = ro.get("latest");
+        if (last != null) {
+            mlModelAdapter.updateModelBytes(last);
+        }
+
     }
 }

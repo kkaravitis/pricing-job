@@ -23,10 +23,10 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 public class KafkaModelBroadcastSource {
 
     /** Descriptor for the broadcast state holding ML model bytes. */
-    public static final MapStateDescriptor<Void, byte[]> MODEL_DESCRIPTOR =
+    public static final MapStateDescriptor<String, byte[]> MODEL_DESCRIPTOR =
           new MapStateDescriptor<>(
                 "model-bytes",
-                Void.class,
+                String.class,
                 byte[].class
           );
 

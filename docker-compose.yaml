@@ -26,18 +26,30 @@ services:
         classloader.resolve-order: parent-first
         state.backend: rocksdb
         state.backend.incremental: true
+        state.backend.type: rocksdb
+        state.backend.rocksdb.localdir: /opt/flink/working/rocksdb
+        execution.checkpointing.storage: filesystem
+        execution.checkpointing.dir: file:///opt/flink/state/checkpoints
+        execution.checkpointing.savepoint-dir: file:///opt/flink/state/savepoints
+        execution.checkpointing.interval: 45000
+        execution.checkpointing.mode: EXACTLY_ONCE
+        execution.checkpointing.min-pause: 15000
+        execution.checkpointing.timeout: 35000
+        execution.checkpointing.max-concurrent-checkpoints: 1
         restart-strategy.type: fixed-delay
         restart-strategy.fixed-delay.attempts: 5
         restart-strategy.fixed-delay.delay: 10 s
-        execution.checkpointing.interval: 3000
-        execution.checkpointing.mode: EXACTLY_ONCE
-        execution.checkpointing.min-pause: 500
-        execution.checkpointing.timeout: 120000
-        execution.checkpointing.max-concurrent-checkpoints: 1
-        
-
+        process.jobmanager.working-dir: /opt/flink/working
+        high-availability.type: ZOOKEEPER
+        high-availability.zookeeper.quorum: zookeeper:2181
+        high-availability.cluster-id: /pricing
+        high-availability.storageDir: file:///opt/flink/ha
     volumes:
       - ./config/config.yaml:/opt/pricing/config/config.yaml
+      - ./state/checkpoints:/opt/flink/state/checkpoints
+      - ./state/savepoints:/opt/flink/state/savepoints
+      - ./working:/opt/flink/working
+      - ./state/ha:/opt/flink/ha
     networks:
       - pricing-net
 
@@ -57,19 +69,32 @@ services:
         classloader.resolve-order: parent-first
         state.backend: rocksdb
         state.backend.incremental: true
+        state.backend.type: rocksdb
+        state.backend.rocksdb.localdir: /opt/flink/working/rocksdb
+        execution.checkpointing.storage: filesystem
+        execution.checkpointing.dir: file:///opt/flink/state/checkpoints
+        execution.checkpointing.savepoint-dir: file:///opt/flink/state/savepoints
+        execution.checkpointing.mode: EXACTLY_ONCE
+        execution.checkpointing.interval: 45000
+        execution.checkpointing.min-pause: 15000
+        execution.checkpointing.timeout: 35000
+        execution.checkpointing.max-concurrent-checkpoints: 1
         restart-strategy.type: fixed-delay
         restart-strategy.fixed-delay.attempts: 5
         restart-strategy.fixed-delay.delay: 10 s
-        execution.checkpointing.interval: 3000
-        execution.checkpointing.mode: EXACTLY_ONCE
-        execution.checkpointing.min-pause: 500
-        execution.checkpointing.timeout: 120000
-        execution.checkpointing.max-concurrent-checkpoints: 1
+        process.taskmanager.working-dir: /opt/flink/working
+        high-availability.type: ZOOKEEPER
+        high-availability.zookeeper.quorum: zookeeper:2181
+        high-availability.cluster-id: /pricing
+        high-availability.storageDir: file:///opt/flink/ha
     volumes:
       - ./config/config.yaml:/opt/pricing/config/config.yaml
+      - ./state/checkpoints:/opt/flink/state/checkpoints
+      - ./state/savepoints:/opt/flink/state/savepoints
+      - ./working:/opt/flink/working
+      - ./state/ha:/opt/flink/ha
     networks:
       - pricing-net
-
 
 networks:
   pricing-net:

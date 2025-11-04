@@ -52,4 +52,8 @@ public class MlModelAdapter implements ModelInferencePricePredictor, Serializabl
         }
         return model.predict(context);
     }
+
+    public boolean hasModelBytes() {
+        return this.modelBytes != null;
+    }
 }
