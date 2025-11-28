@@ -60,6 +60,13 @@ This implementation uses **Apache Flink 2.0.0** to deliver a scalable, fault‑t
 mvn clean install
 docker build . -t pricing-job
 ```
+NOTE: If you are on Windows and using docker version >= 29, please put this file under your user path
+
+C:\Users\<user>\.docker-java.properties
+```txt
+api.version=1.44
+```
+
 
 In order to run through docker-compose you should have started the docker-compose of
 https://github.com/kkaravitis/pricing-api first
